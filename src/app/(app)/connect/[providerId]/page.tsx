@@ -2,11 +2,13 @@
 
 import { use, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { ChevronLeft } from 'lucide-react'
 import { getProvider } from '@/lib/providers'
+import { ProviderIcon } from '@/components/provider-icon'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default function ConnectProviderPage({
   params,
@@ -22,13 +24,15 @@ export default function ConnectProviderPage({
   const [status, setStatus] = useState<'idle' | 'validating' | 'saving' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
 
-  if (!provider) return <p className="p-8">未知服务: {providerId}</p>
+  if (!provider) return (
+    <div className="p-8 text-muted-foreground">未知服务: {providerId}</div>
+  )
 
   if (provider.authType === 'oauth2') {
     return (
-      <div className="max-w-md mx-auto p-8">
-        <p className="text-muted-foreground">OAuth 流程暂未实现（Phase 2）</p>
-        <Button variant="outline" className="mt-4" onClick={() => router.back()}>返回</Button>
+      <div className="p-8 max-w-md">
+        <p className="text-muted-foreground text-sm">OAuth 流程暂未实现（Phase 2）</p>
+        <Button variant="outline" size="sm" className="mt-4" onClick={() => router.back()}>返回</Button>
       </div>
     )
   }
@@ -52,7 +56,6 @@ export default function ConnectProviderPage({
       }
 
       const validateData = await validateRes.json()
-
       if (!validateData.valid) {
         setStatus('error')
         setErrorMsg('凭证验证失败，请检查 API Key 是否正确')
@@ -79,28 +82,48 @@ export default function ConnectProviderPage({
     }
   }
 
+  const isLoading = status === 'validating' || status === 'saving'
+
   return (
-    <div className="max-w-md mx-auto">
-      <Card>
-        <CardHeader>
-          <CardTitle>连接 {provider.name}</CardTitle>
-          <CardDescription>
-            输入你的 API Key 完成连接
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+    <div className="p-8">
+      {/* 面包屑 */}
+      <Link
+        href="/connect"
+        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
+      >
+        <ChevronLeft className="h-4 w-4" />
+        返回选择服务
+      </Link>
+
+      {/* 表单卡片 */}
+      <div className="max-w-md">
+        <div className="bg-card border border-border rounded-xl p-6">
+          {/* Provider 头部 */}
+          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-border">
+            <ProviderIcon providerId={providerId} size={40} />
+            <div>
+              <h1 className="text-base font-semibold text-foreground">连接 {provider.name}</h1>
+              <p className="text-xs text-muted-foreground">输入 API Key 完成连接</p>
+            </div>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label>备注名称（可选）</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground">备注名称（可选）</Label>
               <Input
                 placeholder={provider.name}
                 value={label}
                 onChange={(e) => setLabel(e.target.value)}
+                className="bg-secondary border-border text-foreground placeholder:text-muted-foreground/50"
               />
             </div>
+
             {provider.credentials.map((field) => (
-              <div key={field.key} className="space-y-2">
-                <Label>{field.label}</Label>
+              <div key={field.key} className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">
+                  {field.label}
+                  {field.required && <span className="text-red-400 ml-0.5">*</span>}
+                </Label>
                 <Input
                   type={field.type === 'password' ? 'password' : 'text'}
                   placeholder={field.placeholder}
@@ -109,18 +132,28 @@ export default function ConnectProviderPage({
                     setCredentials((prev) => ({ ...prev, [field.key]: e.target.value }))
                   }
                   required={field.required}
+                  className="bg-secondary border-border text-foreground placeholder:text-muted-foreground/50 font-mono text-sm"
                 />
               </div>
             ))}
-            {errorMsg && <p className="text-sm text-destructive">{errorMsg}</p>}
-            <Button type="submit" className="w-full" disabled={status === 'validating' || status === 'saving'}>
+
+            {errorMsg && (
+              <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-3 py-2">
+                {errorMsg}
+              </p>
+            )}
+
+            <Button
+              type="submit"
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+              disabled={isLoading}
+            >
               {status === 'validating' ? '验证中...' :
-               status === 'saving' ? '保存中...' :
-               '连接'}
+               status === 'saving' ? '保存中...' : '连接'}
             </Button>
           </form>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   )
 }
