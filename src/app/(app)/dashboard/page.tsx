@@ -34,6 +34,7 @@ export default async function DashboardPage() {
 
     return {
       id: service.id,
+      providerId: service.provider_id,
       label: service.label ?? provider?.name ?? service.provider_id,
       providerName: provider?.name ?? service.provider_id,
       category: provider?.category ?? 'other',

@@ -1,13 +1,15 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Progress } from '@/components/ui/progress'
-import { StatusBadge } from './status-badge'
+import { ProviderIcon } from './provider-icon'
+import { StatusDot } from './status-dot'
+import { Sparkline } from './sparkline'
+
+type Status = 'healthy' | 'warning' | 'critical' | 'unknown'
 
 interface Snapshot {
   collector_id: string
   value: number | null
   value_text: string | null
   unit: string | null
-  status: 'healthy' | 'warning' | 'critical' | 'unknown'
+  status: Status
   fetched_at: string
 }
 
@@ -16,10 +18,13 @@ interface CollectorDisplay {
   name: string
   type: string
   snapshot: Snapshot | null
+  history?: number[]
 }
 
 interface ServiceCardProps {
+  id: string
   providerName: string
+  providerId: string
   label: string
   category: string
   collectors: CollectorDisplay[]
@@ -27,42 +32,59 @@ interface ServiceCardProps {
 }
 
 function MetricDisplay({ collector }: { collector: CollectorDisplay }) {
-  const { snapshot, type, name } = collector
-  if (!snapshot) return <p className="text-sm text-muted-foreground">{name}: 暂无数据</p>
+  const { snapshot, type, name, history = [] } = collector
 
-  if (type === 'currency') {
-    const val = snapshot.value ?? 0
+  if (!snapshot) {
     return (
-      <div>
+      <div className="space-y-1">
         <p className="text-xs text-muted-foreground">{name}</p>
-        <p className={`text-2xl font-bold ${snapshot.status === 'warning' ? 'text-yellow-500' : snapshot.status === 'critical' ? 'text-destructive' : ''}`}>
-          ${val.toFixed(2)}
-        </p>
+        <p className="text-sm text-muted-foreground">等待采集...</p>
       </div>
     )
   }
 
-  if (type === 'percentage') {
-    const pct = snapshot.value ?? 0
+  if (type === 'currency') {
+    const val = snapshot.value ?? 0
+    const isWarning = snapshot.status === 'warning'
+    const isCritical = snapshot.status === 'critical'
     return (
-      <div className="space-y-1">
-        <div className="flex justify-between text-xs">
-          <span className="text-muted-foreground">{name}</span>
-          <span>{pct.toFixed(0)}%</span>
+      <div className="flex items-end justify-between">
+        <div>
+          <p className="text-xs text-muted-foreground mb-0.5">{name}</p>
+          <p className={`text-3xl font-bold font-mono ${
+            isCritical ? 'text-red-400' : isWarning ? 'text-amber-400' : 'text-foreground'
+          }`}>
+            ${val.toFixed(2)}
+          </p>
         </div>
-        <Progress value={pct} className={pct > 95 ? '[&>div]:bg-red-500' : pct > 80 ? '[&>div]:bg-yellow-500' : ''} />
+        {history.length > 1 && (
+          <Sparkline
+            values={history}
+            width={72}
+            height={28}
+            color={isCritical ? '#ef4444' : isWarning ? '#f59e0b' : '#10b981'}
+            className="opacity-80"
+          />
+        )}
       </div>
     )
   }
 
   if (type === 'count') {
     return (
-      <div>
-        <p className="text-xs text-muted-foreground">{name}</p>
-        <p className="text-2xl font-bold">
-          {snapshot.value?.toLocaleString()}
-          {snapshot.unit && <span className="text-sm font-normal text-muted-foreground ml-1">{snapshot.unit}</span>}
-        </p>
+      <div className="flex items-end justify-between">
+        <div>
+          <p className="text-xs text-muted-foreground mb-0.5">{name}</p>
+          <p className="text-3xl font-bold font-mono text-foreground">
+            {snapshot.value?.toLocaleString() ?? '—'}
+            {snapshot.unit && (
+              <span className="text-sm font-normal text-muted-foreground ml-1">{snapshot.unit}</span>
+            )}
+          </p>
+        </div>
+        {history.length > 1 && (
+          <Sparkline values={history} width={72} height={28} />
+        )}
       </div>
     )
   }
@@ -70,8 +92,28 @@ function MetricDisplay({ collector }: { collector: CollectorDisplay }) {
   if (type === 'status') {
     return (
       <div>
-        <p className="text-xs text-muted-foreground">{name}</p>
-        <StatusBadge status={snapshot.status} />
+        <p className="text-xs text-muted-foreground mb-1">{name}</p>
+        <StatusDot status={snapshot.status} showLabel />
+      </div>
+    )
+  }
+
+  if (type === 'percentage') {
+    const pct = snapshot.value ?? 0
+    return (
+      <div>
+        <div className="flex justify-between text-xs mb-1">
+          <span className="text-muted-foreground">{name}</span>
+          <span className="font-mono">{pct.toFixed(0)}%</span>
+        </div>
+        <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all ${
+              pct > 95 ? 'bg-red-500' : pct > 80 ? 'bg-amber-500' : 'bg-emerald-500'
+            }`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
       </div>
     )
   }
@@ -79,33 +121,62 @@ function MetricDisplay({ collector }: { collector: CollectorDisplay }) {
   return null
 }
 
-export function ServiceCard({ providerName, label, collectors, authExpired }: ServiceCardProps) {
-  const overallStatus = authExpired
+function timeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const minutes = Math.floor(diff / 60000)
+  if (minutes < 1) return '刚刚'
+  if (minutes < 60) return `${minutes} 分钟前`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours} 小时前`
+  return `${Math.floor(hours / 24)} 天前`
+}
+
+export function ServiceCard({ providerId, providerName, label, collectors, authExpired }: ServiceCardProps) {
+  const overallStatus: Status = authExpired
     ? 'critical'
     : collectors.some((c) => c.snapshot?.status === 'critical') ? 'critical'
     : collectors.some((c) => c.snapshot?.status === 'warning') ? 'warning'
     : collectors.every((c) => c.snapshot?.status === 'healthy') ? 'healthy'
     : 'unknown'
 
+  const lastUpdated = collectors
+    .map((c) => c.snapshot?.fetched_at)
+    .filter(Boolean)
+    .sort()
+    .pop()
+
   return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-base">{label || providerName}</CardTitle>
-          <StatusBadge status={overallStatus} />
+    <div className="bg-card border border-border rounded-xl p-5 hover:border-border/80 transition-all hover:shadow-[0_0_0_1px_rgba(255,255,255,0.08)] group">
+      {/* 头部 */}
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <ProviderIcon providerId={providerId} size={36} />
+          <div>
+            <h3 className="text-sm font-semibold text-foreground leading-none mb-1">
+              {label || providerName}
+            </h3>
+            <p className="text-xs text-muted-foreground">{providerName}</p>
+          </div>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
+        <StatusDot status={overallStatus} showLabel />
+      </div>
+
+      {/* 指标 */}
+      <div className="space-y-3">
         {authExpired && (
-          <p className="text-sm text-destructive">需要重新连接</p>
+          <p className="text-xs text-red-400">凭证已过期，请重新连接</p>
         )}
         {collectors.map((collector) => (
           <MetricDisplay key={collector.id} collector={collector} />
         ))}
-        {collectors.every((c) => !c.snapshot) && !authExpired && (
-          <p className="text-sm text-muted-foreground">等待首次采集...</p>
-        )}
-      </CardContent>
-    </Card>
+      </div>
+
+      {/* 底部时间戳 */}
+      {lastUpdated && (
+        <p className="text-xs text-muted-foreground mt-4 pt-3 border-t border-border/50">
+          更新于 {timeAgo(lastUpdated)}
+        </p>
+      )}
+    </div>
   )
 }
