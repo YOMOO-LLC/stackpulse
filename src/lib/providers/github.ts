@@ -5,7 +5,7 @@ export const githubProvider: ServiceProvider = {
   name: 'GitHub',
   category: 'hosting',
   icon: '/icons/github.svg',
-  authType: 'token',
+  authType: 'oauth2',
   credentials: [
     { key: 'token', label: 'Personal Access Token', type: 'password', required: true, placeholder: 'ghp_...' },
   ],

@@ -5,7 +5,7 @@ export const vercelProvider: ServiceProvider = {
   name: 'Vercel',
   category: 'hosting',
   icon: '/icons/vercel.svg',
-  authType: 'token',
+  authType: 'oauth2',
   credentials: [
     { key: 'token', label: 'API Token', type: 'password', required: true, placeholder: 'vercel_...' },
   ],

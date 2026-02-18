@@ -5,11 +5,8 @@ export const sentryProvider: ServiceProvider = {
   name: 'Sentry',
   category: 'monitoring',
   icon: '/icons/sentry.svg',
-  authType: 'api_key',
-  credentials: [
-    { key: 'authToken', label: 'Auth Token', type: 'password', required: true },
-    { key: 'orgSlug', label: 'Organization Slug', type: 'text', required: true },
-  ],
+  authType: 'oauth2',
+  credentials: [],
   collectors: [
     {
       id: 'error_count',

@@ -13,7 +13,7 @@ describe('Sentry Provider', () => {
   it('has correct metadata', () => {
     expect(sentryProvider.id).toBe('sentry')
     expect(sentryProvider.category).toBe('monitoring')
-    expect(sentryProvider.authType).toBe('api_key')
+    expect(sentryProvider.authType).toBe('oauth2')
   })
 
   it('returns error count with healthy status', async () => {
