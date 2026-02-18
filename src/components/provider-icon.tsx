@@ -1,3 +1,5 @@
+'use client'
+
 interface ProviderIconProps {
   providerId: string
   size?: number

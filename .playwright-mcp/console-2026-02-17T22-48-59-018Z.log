@@ -90,3 +90,4 @@ You cannot have two parallel pages that resolve to the same path. Please check /
 You cannot have two parallel pages that resolve to the same path. Please check /(app)/connect/[providerId] and /connect. @ http://localhost:4567/_next/static/chunks/cb717_next_dist_28b0f0a6._.js:1920
 [15990310ms] [ERROR] ./Documents/GitHub/stackpulse/src/app/dashboard
 You cannot have two parallel pages that resolve to the same path. Please check /(app)/dashboard and /dashboard. @ http://localhost:4567/_next/static/chunks/cb717_next_dist_28b0f0a6._.js:1920
+[16647368ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4567/login:0
