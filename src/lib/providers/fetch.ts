@@ -35,7 +35,10 @@ export async function fetchProviderMetrics(
       return [{ collectorId: 'connection_status', value: null, valueText: r.value ?? null, unit: '', status: r.status }]
     }
     case 'sentry': {
-      const r = await fetchSentryMetrics(credentials.authToken, credentials.orgSlug)
+      // OAuth: access_token + orgSlug (stored in creds) | Legacy: authToken + orgSlug
+      const token = credentials.access_token ?? credentials.authToken
+      const orgSlug = credentials.orgSlug ?? ''
+      const r = await fetchSentryMetrics(token, orgSlug)
       return [{ collectorId: 'error_count', value: r.value ?? null, valueText: null, unit: 'events', status: r.status }]
     }
     case 'stripe': {
@@ -43,14 +46,18 @@ export async function fetchProviderMetrics(
       return [{ collectorId: 'account_balance', value: r.balance ?? null, valueText: null, unit: 'USD', status: r.status }]
     }
     case 'github': {
-      const r = await fetchGitHubMetrics(credentials.token)
+      // OAuth: access_token | Legacy PAT: token
+      const token = credentials.access_token ?? credentials.token
+      const r = await fetchGitHubMetrics(token)
       return [
         { collectorId: 'actions_minutes_used', value: r.minutesUsed ?? null, valueText: null, unit: 'minutes', status: r.status },
         { collectorId: 'actions_minutes_limit', value: r.minutesLimit ?? null, valueText: null, unit: 'minutes', status: 'healthy' },
       ]
     }
     case 'vercel': {
-      const r = await fetchVercelMetrics(credentials.token)
+      // OAuth: access_token | Legacy API token: token
+      const token = credentials.access_token ?? credentials.token
+      const r = await fetchVercelMetrics(token)
       return [
         { collectorId: 'bandwidth_used', value: r.bandwidthUsed ?? null, valueText: null, unit: 'GB', status: r.status },
         { collectorId: 'deployment_status', value: null, valueText: r.deploymentStatus ?? null, unit: '', status: r.status },
