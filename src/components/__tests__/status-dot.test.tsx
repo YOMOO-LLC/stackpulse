@@ -23,7 +23,7 @@ describe('StatusDot', () => {
 
   it('renders label when showLabel is true', () => {
     render(<StatusDot status="healthy" showLabel />)
-    expect(screen.getByText('正常')).toBeTruthy()
+    expect(screen.getByText('Healthy')).toBeTruthy()
   })
 
   it('renders ping animation for healthy and warning', () => {

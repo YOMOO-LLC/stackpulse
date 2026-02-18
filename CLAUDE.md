@@ -5,59 +5,72 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-npm run dev      # 启动开发服务器（端口 4567）
-npm run build    # 构建生产版本
-npm run start    # 启动生产服务器
-npm run lint     # 运行 ESLint
+npm run dev      # Start dev server (port 4567)
+npm run build    # Build for production
+npm run start    # Start production server
+npm run lint     # Run ESLint
 ```
 
-开发服务器访问地址：http://localhost:4567（非默认的 3000 端口）
+Dev server: http://localhost:4567 (not the default port 3000)
 
-## 技术栈
+## Tech Stack
 
-- **Next.js 16.1.6**（App Router）+ **React 19.2.3**
-- **TypeScript**（strict 模式）
-- **Tailwind CSS v4**（使用 `@import "tailwindcss"` 语法，非旧版 `@tailwind` 指令）
-- 字体：Geist Sans + Geist Mono（通过 `next/font/google` 加载）
+- **Next.js 16.1.6** (App Router) + **React 19.2.3**
+- **TypeScript** (strict mode)
+- **Tailwind CSS v4** (`@import "tailwindcss"` syntax — not the legacy `@tailwind` directives)
+- Fonts: Geist Sans + Geist Mono (loaded via `next/font/google`)
 
-## 架构
+## Architecture
 
-采用 Next.js App Router，源码位于 `src/` 目录：
+Next.js App Router with source under `src/`:
 
-- `src/app/layout.tsx` — 根布局，设置字体 CSS 变量和全局样式
-- `src/app/page.tsx` — 首页（当前为脚手架默认页）
-- `src/app/globals.css` — 全局样式，定义 `--background` / `--foreground` CSS 变量和 Tailwind 主题配置
+- `src/app/layout.tsx` — Root layout; sets font CSS variables and global styles
+- `src/app/globals.css` — Global styles; defines CSS custom properties and Tailwind theme config
+- `src/app/(auth)/login/` — Login/signup page (no sidebar)
+- `src/app/(app)/` — Authenticated route group with shared sidebar layout
+  - `dashboard/` — Service monitoring overview
+  - `connect/` — Provider selection and API key form
+- `src/components/app-sidebar.tsx` — Fixed left sidebar with service list and status dots
+- `src/components/service-card.tsx` — Monitoring card with metric display and sparkline
+- `src/lib/providers/` — Provider definitions (OpenRouter, Resend, Sentry)
+- `src/lib/supabase/` — Supabase client (server + browser)
+- `src/app/api/` — Next.js API routes (services CRUD, validation)
 
-路径别名：`@/*` 映射到 `./src/*`
+Path alias: `@/*` → `./src/*`
 
-## CSS 主题
+## CSS Theme
 
-CSS 变量通过 Tailwind v4 的 `@theme inline` 块定义，支持系统级暗色模式（`prefers-color-scheme: dark`）。在组件中使用 `bg-background`、`text-foreground` 等 Tailwind 工具类引用这些变量。
+Dark-first design system. CSS variables are defined in `src/app/globals.css` using Tailwind v4's `@theme inline` block:
+- Background: `zinc-950` (`#09090b`)
+- Primary: `emerald-500` (`#10b981`)
+- Card: `zinc-900` (`#18181b`)
 
-## TDD 工作流
+Use Tailwind utilities like `bg-background`, `text-foreground`, `bg-card`, `text-primary` in components.
 
-测试框架：**Vitest** + `@testing-library/react`
+## TDD Workflow
+
+Test framework: **Vitest** + `@testing-library/react`
 
 ```bash
-npx vitest              # 监听模式（开发时常驻）
-npx vitest run          # 单次运行全部测试
-npx vitest run src/path/to/file.test.ts  # 运行单个文件
-npx vitest --coverage   # 生成覆盖率报告
+npx vitest              # Watch mode (keep running during development)
+npx vitest run          # Single run, all tests
+npx vitest run src/path/to/file.test.ts  # Single file
+npx vitest --coverage   # Coverage report
 ```
 
-**Red-Green-Refactor 循环**（所有功能开发和 Bug 修复均须遵循）：
+**Red-Green-Refactor** (required for all features and bug fixes):
 
-1. **Red** — 先写一个描述期望行为的失败测试
-2. **Green** — 写刚好能让测试通过的最简实现
-3. **Refactor** — 在测试保护下重构，保持测试绿色
+1. **Red** — Write a failing test that describes the expected behavior
+2. **Green** — Write the minimum implementation to make the test pass
+3. **Refactor** — Clean up under green tests
 
-不得在没有对应失败测试的情况下直接写实现代码。
+Never write implementation code without a corresponding failing test first.
 
-## 测试账号
+## Test Account
 
-| 字段 | 值 |
-|------|----|
-| Email | `dev@stackpulse.local` |
-| Password | `Test1234!` |
+| Field    | Value                  |
+|----------|------------------------|
+| Email    | `dev@stackpulse.local` |
+| Password | `Test1234!`            |
 
-seed 文件：`supabase/seed.sql`，运行 `supabase db reset` 可重建本地数据库并插入测试账号。
+Seed file: `supabase/seed.sql`. Run `supabase db reset` to recreate the local database with this account.
