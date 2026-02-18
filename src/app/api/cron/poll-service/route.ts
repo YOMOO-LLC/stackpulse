@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { decrypt } from '@/lib/crypto'
+import { decrypt, encrypt } from '@/lib/crypto'
+import { getOAuthConfig } from '@/lib/oauth/config'
+import { needsRefresh, refreshAccessToken } from '@/lib/oauth/refresh'
 import { getProvider } from '@/lib/providers'
 import { evaluateAlerts } from '@/lib/alerts/engine'
 import { sendAlertEmail } from '@/lib/notifications/email'
@@ -38,6 +40,24 @@ async function handler(req: NextRequest) {
   }
 
   const credentials = JSON.parse(decrypt(service.credentials, process.env.ENCRYPTION_KEY!))
+
+  if (provider.authType === 'oauth2') {
+    const oauthConfig = getOAuthConfig(service.provider_id)
+    if (oauthConfig?.supportsRefresh && needsRefresh(credentials.expires_at) && credentials.refresh_token) {
+      try {
+        const newTokens = await refreshAccessToken(credentials.refresh_token, oauthConfig)
+        const updated = { ...credentials, ...newTokens }
+        const encryptedUpdated = encrypt(JSON.stringify(updated), process.env.ENCRYPTION_KEY!)
+        await supabase.from('connected_services')
+          .update({ credentials: encryptedUpdated })
+          .eq('id', serviceId)
+        Object.assign(credentials, updated)
+      } catch {
+        // Refresh failed — proceed with existing token, will mark auth_expired if 401
+        console.error('[poll-service] Token refresh failed for', serviceId)
+      }
+    }
+  }
 
   try {
     const snapshots = await fetchProviderMetrics(service.provider_id, credentials)
