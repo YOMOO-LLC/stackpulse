@@ -1,7 +1,7 @@
 'use client'
 
-import { use, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, use, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
 import { getProvider } from '@/lib/providers'
@@ -10,7 +10,15 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
-export default function ConnectProviderPage({
+export default function ConnectProviderPage(props: { params: Promise<{ providerId: string }> }) {
+  return (
+    <Suspense>
+      <ConnectProviderPageInner {...props} />
+    </Suspense>
+  )
+}
+
+function ConnectProviderPageInner({
   params,
 }: {
   params: Promise<{ providerId: string }>
@@ -18,6 +26,8 @@ export default function ConnectProviderPage({
   const { providerId } = use(params)
   const provider = getProvider(providerId)
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const oauthError = searchParams.get('error')
 
   const [credentials, setCredentials] = useState<Record<string, string>>({})
   const [label, setLabel] = useState('')
@@ -29,10 +39,62 @@ export default function ConnectProviderPage({
   )
 
   if (provider.authType === 'oauth2') {
+    function handleOAuthConnect() {
+      const params = new URLSearchParams()
+      if (label) params.set('label', label)
+      window.location.href = `/api/oauth/authorize/${providerId}?${params.toString()}`
+    }
+
     return (
-      <div className="p-8 max-w-md">
-        <p className="text-muted-foreground text-sm">OAuth flow not yet implemented (Phase 2)</p>
-        <Button variant="outline" size="sm" className="mt-4" onClick={() => router.back()}>Go back</Button>
+      <div className="p-8">
+        <Link
+          href="/connect"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
+        >
+          <ChevronLeft className="h-4 w-4" />
+          Back to services
+        </Link>
+
+        <div className="max-w-md">
+          <div className="bg-card border border-border rounded-xl p-6">
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-border">
+              <ProviderIcon providerId={providerId} size={40} />
+              <div>
+                <h1 className="text-base font-semibold text-foreground">Connect {provider.name}</h1>
+                <p className="text-xs text-muted-foreground">Authorize via {provider.name}</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Display name (optional)</Label>
+                <Input
+                  placeholder={provider.name}
+                  value={label}
+                  onChange={(e) => setLabel(e.target.value)}
+                  className="bg-secondary border-border text-foreground placeholder:text-muted-foreground/50"
+                />
+              </div>
+
+              {oauthError === 'oauth_failed' && (
+                <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-3 py-2">
+                  Authorization failed — please try again.
+                </p>
+              )}
+
+              <Button
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                onClick={handleOAuthConnect}
+              >
+                Authorize with {provider.name} →
+              </Button>
+
+              <p className="text-xs text-muted-foreground text-center">
+                You&apos;ll be redirected to {provider.name} to grant read-only access.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     )
   }
