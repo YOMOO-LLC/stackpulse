@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { ProviderIcon } from './provider-icon'
 import { StatusDot } from './status-dot'
 import { Sparkline } from './sparkline'
@@ -131,7 +132,7 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(hours / 24)}d ago`
 }
 
-export function ServiceCard({ providerId, providerName, label, collectors, authExpired }: ServiceCardProps) {
+export function ServiceCard({ id, providerId, providerName, label, collectors, authExpired }: ServiceCardProps) {
   const overallStatus: Status = authExpired
     ? 'critical'
     : collectors.some((c) => c.snapshot?.status === 'critical') ? 'critical'
@@ -146,7 +147,7 @@ export function ServiceCard({ providerId, providerName, label, collectors, authE
     .pop()
 
   return (
-    <div className="bg-card border border-border rounded-xl p-5 hover:border-border/80 transition-all hover:shadow-[0_0_0_1px_rgba(255,255,255,0.08)] group">
+    <Link href={`/dashboard/${id}`} className="block bg-card border border-border rounded-xl p-5 hover:border-border/80 transition-all hover:shadow-[0_0_0_1px_rgba(255,255,255,0.08)] group">
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
@@ -177,6 +178,6 @@ export function ServiceCard({ providerId, providerName, label, collectors, authE
           Updated {timeAgo(lastUpdated)}
         </p>
       )}
-    </div>
+    </Link>
   )
 }
