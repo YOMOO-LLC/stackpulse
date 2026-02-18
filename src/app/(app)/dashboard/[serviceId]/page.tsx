@@ -7,6 +7,7 @@ import { MetricSection } from './metric-section'
 import { AlertRulesSection } from './alert-rules-section'
 import { EventsSection } from './events-section'
 import { DeleteServiceButton } from './delete-service-button'
+import { CredentialReauthBanner } from '@/components/credential-reauth-banner'
 import { ArrowLeft } from 'lucide-react'
 
 interface PageProps {
@@ -57,6 +58,14 @@ export default async function ServiceDetailPage({ params }: PageProps) {
         </div>
         <DeleteServiceButton serviceId={serviceId} />
       </div>
+
+      {service.auth_expired && provider && (
+        <CredentialReauthBanner
+          serviceId={serviceId}
+          providerId={service.provider_id}
+          credentialFields={provider.credentials ?? []}
+        />
+      )}
 
       <MetricSection
         serviceId={serviceId}

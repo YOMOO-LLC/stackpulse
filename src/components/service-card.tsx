@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { AlertTriangle } from 'lucide-react'
 import { ProviderIcon } from './provider-icon'
 import { StatusDot } from './status-dot'
 import { Sparkline } from './sparkline'
@@ -165,7 +166,9 @@ export function ServiceCard({ id, providerId, providerName, label, collectors, a
       {/* Metrics */}
       <div className="space-y-3">
         {authExpired && (
-          <p className="text-xs text-red-400">Credentials expired — please reconnect</p>
+          <span className="text-xs text-red-400 flex items-center gap-1">
+            <AlertTriangle className="h-3 w-3" /> Credentials expired
+          </span>
         )}
         {collectors.map((collector) => (
           <MetricDisplay key={collector.id} collector={collector} />
