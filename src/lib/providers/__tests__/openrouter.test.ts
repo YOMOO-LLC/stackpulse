@@ -19,9 +19,9 @@ describe('OpenRouter Provider', () => {
 
   it('returns healthy when balance > $5', async () => {
     server.use(
-      http.get('https://openrouter.ai/api/v1/auth/key', () => {
+      http.get('https://openrouter.ai/api/v1/credits', () => {
         return HttpResponse.json({
-          data: { limit_remaining: 20, usage: 5 },
+          data: { total_credits: 25, total_usage: 5 },
         })
       })
     )
@@ -33,9 +33,9 @@ describe('OpenRouter Provider', () => {
 
   it('returns warning when balance < $5', async () => {
     server.use(
-      http.get('https://openrouter.ai/api/v1/auth/key', () => {
+      http.get('https://openrouter.ai/api/v1/credits', () => {
         return HttpResponse.json({
-          data: { limit_remaining: 3, usage: 22 },
+          data: { total_credits: 25, total_usage: 22 },
         })
       })
     )
@@ -47,7 +47,7 @@ describe('OpenRouter Provider', () => {
 
   it('returns unknown on 401', async () => {
     server.use(
-      http.get('https://openrouter.ai/api/v1/auth/key', () => {
+      http.get('https://openrouter.ai/api/v1/credits', () => {
         return new HttpResponse(null, { status: 401 })
       })
     )

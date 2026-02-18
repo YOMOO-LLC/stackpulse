@@ -39,7 +39,7 @@ export interface MetricResult {
 
 export async function fetchOpenRouterMetrics(apiKey: string): Promise<MetricResult> {
   try {
-    const res = await fetch('https://openrouter.ai/api/v1/auth/key', {
+    const res = await fetch('https://openrouter.ai/api/v1/credits', {
       headers: { Authorization: `Bearer ${apiKey}` },
     })
 
@@ -48,7 +48,7 @@ export async function fetchOpenRouterMetrics(apiKey: string): Promise<MetricResu
     }
 
     const json = await res.json()
-    const remaining = json.data.limit_remaining as number
+    const remaining = (json.data.total_credits as number) - (json.data.total_usage as number)
 
     return {
       status: remaining < 5 ? 'warning' : 'healthy',
