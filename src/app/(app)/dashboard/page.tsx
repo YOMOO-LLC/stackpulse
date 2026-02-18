@@ -65,39 +65,37 @@ export default async function DashboardPage() {
 
   return (
     <div className="p-8">
-      {/* 页面头部 */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-xl font-semibold text-foreground">服务监控</h1>
+          <h1 className="text-xl font-semibold text-foreground">Services</h1>
           {totalCount > 0 && (
             <div className="flex items-center gap-2 mt-1">
               <StatusDot status={hasIssues ? 'warning' : 'healthy'} />
               <span className="text-sm text-muted-foreground">
                 {hasIssues
-                  ? `${totalCount - healthyCount} 个服务需要关注`
-                  : `全部 ${totalCount} 个服务运行正常`
+                  ? `${totalCount - healthyCount} service${totalCount - healthyCount !== 1 ? 's' : ''} need attention`
+                  : `All ${totalCount} service${totalCount !== 1 ? 's' : ''} healthy`
                 }
               </span>
             </div>
           )}
         </div>
         <Button asChild size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground">
-          <Link href="/connect">+ 添加服务</Link>
+          <Link href="/connect">+ Add Service</Link>
         </Button>
       </div>
 
-      {/* 空状态 */}
       {servicesWithMeta.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-32 text-center">
           <div className="w-16 h-16 rounded-2xl bg-card border border-border flex items-center justify-center mb-6">
             <span className="text-2xl">📡</span>
           </div>
-          <h2 className="text-base font-semibold text-foreground mb-2">还没有连接任何服务</h2>
+          <h2 className="text-base font-semibold text-foreground mb-2">No services connected</h2>
           <p className="text-sm text-muted-foreground mb-6 max-w-xs">
-            连接你的 API 服务，实时掌握余额、状态和错误量
+            Connect your API services to monitor balance, status, and error counts in real time.
           </p>
           <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground">
-            <Link href="/connect">连接第一个服务</Link>
+            <Link href="/connect">Connect your first service</Link>
           </Button>
         </div>
       ) : (

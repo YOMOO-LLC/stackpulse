@@ -23,7 +23,7 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // 刷新 session（不做路由保护，路由保护在各 layout 的 Server Component 中）
+  // Refresh session — route protection is handled in each layout's Server Component
   await supabase.auth.getUser()
 
   return supabaseResponse

@@ -1,9 +1,9 @@
--- ─── 测试账号 ───────────────────────────────────────────────────────────────
+-- ─── Test account ───────────────────────────────────────────────────────────
 -- Email:    dev@stackpulse.local
 -- Password: Test1234!
 --
--- 使用方式：supabase db reset（本地）或手动执行此文件
--- 注意：crypt() 需要 pgcrypto 扩展，Supabase 默认已启用
+-- Usage: supabase db reset (local) or run this file manually
+-- Note: crypt() requires the pgcrypto extension, which Supabase enables by default
 -- ─────────────────────────────────────────────────────────────────────────────
 
 INSERT INTO auth.users (

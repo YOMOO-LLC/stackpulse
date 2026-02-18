@@ -3,7 +3,7 @@ import { openrouterProvider } from './openrouter'
 import { resendProvider } from './resend'
 import { sentryProvider } from './sentry'
 
-// 注册所有 Provider（模块加载时自动执行）
+// Register all providers (executed on module load)
 registerProvider(openrouterProvider)
 registerProvider(resendProvider)
 registerProvider(sentryProvider)

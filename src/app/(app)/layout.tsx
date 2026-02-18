@@ -10,7 +10,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   if (!user) redirect('/login')
 
-  // 查询服务列表（用于侧边栏）
+  // Fetch services for sidebar
   const { data: services } = await supabase
     .from('connected_services')
     .select(`

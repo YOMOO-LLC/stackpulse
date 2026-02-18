@@ -48,7 +48,7 @@
 :root {
   --radius: 0.625rem;
 
-  /* 背景层级 (zinc-950 / 900 / 800 / 700) */
+  /* Background layers (zinc-950 / 900 / 800 / 700) */
   --background:    oklch(0.108 0 0);   /* zinc-950 #09090b */
   --foreground:    oklch(0.985 0 0);   /* zinc-50  #fafafa */
 
@@ -58,11 +58,11 @@
   --popover:       oklch(0.15 0 0);
   --popover-foreground: oklch(0.985 0 0);
 
-  /* 主色 Emerald */
+  /* Primary — Emerald */
   --primary:       oklch(0.696 0.17 162.48);  /* emerald-500 #10b981 */
   --primary-foreground: oklch(0.985 0 0);
 
-  /* 次要 */
+  /* Secondary */
   --secondary:     oklch(0.21 0 0);    /* zinc-800 #27272a */
   --secondary-foreground: oklch(0.985 0 0);
 
@@ -72,22 +72,22 @@
   --accent:        oklch(0.21 0 0);
   --accent-foreground: oklch(0.985 0 0);
 
-  /* 危险/错误 */
+  /* Destructive */
   --destructive:   oklch(0.628 0.258 29.23); /* red-500 #ef4444 */
 
-  /* 边框/输入 */
+  /* Border / Input */
   --border:        oklch(0.21 0 0);    /* zinc-800 */
   --input:         oklch(0.27 0 0);    /* zinc-700 */
   --ring:          oklch(0.696 0.17 162.48); /* emerald */
 
-  /* 图表色 */
+  /* Chart colors */
   --chart-1: oklch(0.696 0.17 162.48);  /* emerald */
   --chart-2: oklch(0.769 0.188 70.08);
   --chart-3: oklch(0.646 0.222 41.116);
   --chart-4: oklch(0.6 0.118 184.704);
   --chart-5: oklch(0.488 0.243 264.376);
 
-  /* 侧边栏 */
+  /* Sidebar */
   --sidebar:          oklch(0.15 0 0);   /* zinc-900 */
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary:  oklch(0.696 0.17 162.48);
@@ -98,7 +98,7 @@
   --sidebar-ring:     oklch(0.696 0.17 162.48);
 }
 
-/* .dark 保留空块以兼容 shadcn 组件 */
+/* .dark block kept for shadcn component compatibility */
 .dark {
   --background:    oklch(0.108 0 0);
   --foreground:    oklch(0.985 0 0);
