@@ -20,7 +20,7 @@ export async function signUpWithEmail(formData: FormData) {
 
   const { error } = await supabase.auth.signUp({ email, password })
   if (error) return { error: error.message }
-  return { message: '请检查邮箱完成验证' }
+  return { message: 'Check your email to confirm your account' }
 }
 
 export async function signOut() {

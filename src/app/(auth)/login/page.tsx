@@ -25,9 +25,12 @@ export default function LoginPage() {
     }
   }
 
-  const isError = message && (
-    message.includes('错误') || message.includes('failed') ||
-    message.includes('Invalid') || message.includes('invalid')
+  const isError = !!message && (
+    message.includes('failed') ||
+    message.includes('Invalid') ||
+    message.includes('invalid') ||
+    message.includes('error') ||
+    message.includes('Error')
   )
 
   return (
@@ -41,18 +44,17 @@ export default function LoginPage() {
           <span className="text-lg font-semibold text-foreground">StackPulse</span>
         </div>
 
-        {/* 卡片 */}
         <div className="bg-card border border-border rounded-xl p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.04)]">
           <h2 className="text-base font-semibold text-foreground mb-1">
-            {mode === 'login' ? '登录账号' : '创建账号'}
+            {mode === 'login' ? 'Sign in' : 'Create account'}
           </h2>
           <p className="text-xs text-muted-foreground mb-6">
-            {mode === 'login' ? '欢迎回来' : '开始监控你的 API 服务'}
+            {mode === 'login' ? 'Welcome back' : 'Start monitoring your API services'}
           </p>
 
           <form action={handleSubmit} className="space-y-3">
             <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-xs text-muted-foreground">邮箱</Label>
+              <Label htmlFor="email" className="text-xs text-muted-foreground">Email</Label>
               <Input
                 id="email" name="email" type="email" required
                 autoComplete="email"
@@ -61,7 +63,7 @@ export default function LoginPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="password" className="text-xs text-muted-foreground">密码</Label>
+              <Label htmlFor="password" className="text-xs text-muted-foreground">Password</Label>
               <Input
                 id="password" name="password" type="password" required
                 autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
@@ -85,7 +87,7 @@ export default function LoginPage() {
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
               disabled={pending}
             >
-              {pending ? '处理中...' : mode === 'login' ? '登录' : '注册'}
+              {pending ? 'Loading...' : mode === 'login' ? 'Sign in' : 'Sign up'}
             </Button>
           </form>
 
@@ -93,7 +95,7 @@ export default function LoginPage() {
             onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setMessage('') }}
             className="w-full mt-4 text-xs text-muted-foreground hover:text-foreground transition-colors text-center"
           >
-            {mode === 'login' ? '没有账号？注册' : '已有账号？登录'}
+            {mode === 'login' ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
           </button>
         </div>
       </div>
