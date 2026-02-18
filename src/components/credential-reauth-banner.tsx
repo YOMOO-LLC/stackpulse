@@ -17,6 +17,7 @@ interface CredentialReauthBannerProps {
   serviceId: string
   providerId: string
   credentialFields: CredentialField[]
+  authType?: string
   onSuccess?: () => void
 }
 
@@ -24,12 +25,35 @@ export function CredentialReauthBanner({
   serviceId,
   providerId,
   credentialFields,
+  authType,
   onSuccess,
 }: CredentialReauthBannerProps) {
   const [open, setOpen] = useState(false)
   const [values, setValues] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // OAuth re-authorize: redirect to OAuth flow
+  if (authType === 'oauth2') {
+    return (
+      <div className="bg-red-950/30 border border-red-800 rounded-lg p-4 mb-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-red-400">
+            <AlertTriangle className="h-4 w-4" />
+            <span className="text-sm font-medium">Authorization expired. Re-authorize to resume monitoring.</span>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            className="border-red-800 text-red-400 hover:bg-red-950"
+            onClick={() => { window.location.href = `/api/oauth/authorize/${providerId}` }}
+          >
+            Re-authorize
+          </Button>
+        </div>
+      </div>
+    )
+  }
 
   async function handleSave() {
     setSaving(true)

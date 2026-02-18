@@ -64,6 +64,7 @@ export default async function ServiceDetailPage({ params }: PageProps) {
           serviceId={serviceId}
           providerId={service.provider_id}
           credentialFields={provider.credentials ?? []}
+          authType={provider.authType}
         />
       )}
 
