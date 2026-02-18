@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { AppSidebar } from '@/components/app-sidebar'
+import { AlertToastContainer } from '@/components/alert-toast'
 
 type Status = 'healthy' | 'warning' | 'critical' | 'unknown'
 
@@ -40,6 +41,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <main className="flex-1 overflow-y-auto">
         {children}
       </main>
+      <AlertToastContainer />
     </div>
   )
 }

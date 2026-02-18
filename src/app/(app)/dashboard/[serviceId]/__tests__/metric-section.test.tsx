@@ -3,6 +3,17 @@ import { render, screen } from '@testing-library/react'
 import { MetricSection } from '../metric-section'
 import type { Collector } from '@/lib/providers/types'
 
+// Mock Supabase client for realtime subscriptions
+vi.mock('@/lib/supabase/client', () => ({
+  createClient: () => ({
+    channel: () => ({
+      on: function () { return this },
+      subscribe: function () { return this },
+    }),
+    removeChannel: () => {},
+  }),
+}))
+
 // Mock recharts to avoid SSR issues in tests
 vi.mock('recharts', () => ({
   ResponsiveContainer: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,

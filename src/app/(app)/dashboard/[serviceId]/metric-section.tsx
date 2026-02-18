@@ -1,8 +1,10 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import type { Collector } from '@/lib/providers/types'
 import { StatusDot } from '@/components/status-dot'
 import { MetricChart } from './metric-chart'
+import { createClient } from '@/lib/supabase/client'
 
 interface Snapshot {
   collector_id: string
@@ -37,7 +39,39 @@ function timeAgo(iso: string): string {
   return `${diffHrs} hour${diffHrs !== 1 ? 's' : ''} ago`
 }
 
-export function MetricSection({ collectors, snapshots }: MetricSectionProps) {
+export function MetricSection({ serviceId, collectors, snapshots }: MetricSectionProps) {
+  const [liveSnapshots, setLiveSnapshots] = useState<Snapshot[]>(snapshots)
+
+  useEffect(() => {
+    setLiveSnapshots(snapshots)
+  }, [snapshots])
+
+  useEffect(() => {
+    const supabase = createClient()
+    const channel = supabase
+      .channel(`snapshots:${serviceId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'metric_snapshots',
+        filter: `connected_service_id=eq.${serviceId}`,
+      }, (payload) => {
+        const row = payload.new as Record<string, unknown>
+        const snap: Snapshot = {
+          collector_id: row.collector_id as string,
+          value: row.value != null ? Number(row.value) : null,
+          value_text: (row.value_text as string) ?? null,
+          unit: (row.unit as string) ?? null,
+          status: row.status as string,
+          fetched_at: row.fetched_at as string,
+        }
+        setLiveSnapshots((prev) => [...prev, snap])
+      })
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [serviceId])
+
   if (collectors.length === 0) {
     return (
       <section className="mb-8">
@@ -52,7 +86,7 @@ export function MetricSection({ collectors, snapshots }: MetricSectionProps) {
       <h2 className="text-xs font-semibold tracking-widest text-muted-foreground mb-3">METRICS</h2>
       <div className="space-y-4">
         {collectors.map((collector) => {
-          const collectorSnaps = snapshots
+          const collectorSnaps = liveSnapshots
             .filter((s) => s.collector_id === collector.id)
             .sort((a, b) => new Date(a.fetched_at).getTime() - new Date(b.fetched_at).getTime())
 

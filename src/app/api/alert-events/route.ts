@@ -11,20 +11,36 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const serviceId = searchParams.get('serviceId')
   const offset = Number(searchParams.get('offset') ?? '0')
-  const limit = 20
+  const limit = Number(searchParams.get('limit') ?? '20')
 
-  if (!serviceId) {
-    return NextResponse.json({ error: 'serviceId is required' }, { status: 400 })
+  let configIds: string[]
+
+  if (serviceId) {
+    // Fetch alert_configs for a specific service
+    const { data: configs } = await supabase
+      .from('alert_configs')
+      .select('id')
+      .eq('connected_service_id', serviceId)
+      .eq('user_id', user.id)
+    configIds = (configs ?? []).map((c) => c.id)
+  } else {
+    // Fetch all alert_configs across user's services
+    const { data: services } = await supabase
+      .from('connected_services')
+      .select('id')
+      .eq('user_id', user.id)
+
+    const serviceIds = (services ?? []).map((s) => s.id)
+    if (serviceIds.length === 0) {
+      return NextResponse.json({ events: [], hasMore: false })
+    }
+
+    const { data: configs } = await supabase
+      .from('alert_configs')
+      .select('id')
+      .in('connected_service_id', serviceIds)
+    configIds = (configs ?? []).map((c) => c.id)
   }
-
-  // Fetch alert_configs for this service first to get their IDs
-  const { data: configs } = await supabase
-    .from('alert_configs')
-    .select('id')
-    .eq('connected_service_id', serviceId)
-    .eq('user_id', user.id)
-
-  const configIds = (configs ?? []).map((c) => c.id)
 
   if (configIds.length === 0) {
     return NextResponse.json({ events: [], hasMore: false })
