@@ -1,0 +1,92 @@
+[   72902ms] [WARNING] Image with src "http://localhost:4567/vercel.svg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:4567/_next/static/chunks/cb717_next_dist_da59b082._.js:2297
+[   78342ms] [WARNING] Image with src "http://localhost:4567/vercel.svg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:4567/_next/static/chunks/cb717_next_dist_da59b082._.js:2297
+[15982993ms] [ERROR] ./Documents/GitHub/stackpulse/src/app/connect
+You cannot have two parallel pages that resolve to the same path. Please check /(app)/connect and /connect. @ http://localhost:4567/_next/static/chunks/cb717_next_dist_da59b082._.js:3127
+[15982993ms] [ERROR] ./Documents/GitHub/stackpulse/src/app/connect
+You cannot have two parallel pages that resolve to the same path. Please check /(app)/connect/[providerId] and /connect. @ http://localhost:4567/_next/static/chunks/cb717_next_dist_da59b082._.js:3127
+[15982993ms] [ERROR] ./Documents/GitHub/stackpulse/src/app/dashboard
+You cannot have two parallel pages that resolve to the same path. Please check /(app)/dashboard and /dashboard. @ http://localhost:4567/_next/static/chunks/cb717_next_dist_da59b082._.js:3127
+[15983070ms] [ERROR] ./Documents/GitHub/stackpulse/src/app/connect
+You cannot have two parallel pages that resolve to the same path. Please check /(app)/connect and /connect. @ http://localhost:4567/_next/static/chunks/cb717_next_dist_da59b082._.js:3127
+[15983070ms] [ERROR] ./Documents/GitHub/stackpulse/src/app/connect
+You cannot have two parallel pages that resolve to the same path. Please check /(app)/connect/[providerId] and /connect. @ http://localhost:4567/_next/static/chunks/cb717_next_dist_da59b082._.js:3127
+[15983070ms] [ERROR] ./Documents/GitHub/stackpulse/src/app/dashboard
+You cannot have two parallel pages that resolve to the same path. Please check /(app)/dashboard and /dashboard. @ http://localhost:4567/_next/static/chunks/cb717_next_dist_da59b082._.js:3127
+[15983292ms] [ERROR] ./Documents/GitHub/stackpulse/src/app/connect
+You cannot have two parallel pages that resolve to the same path. Please check /(app)/connect and /connect. @ http://localhost:4567/_next/static/chunks/cb717_next_dist_da59b082._.js:3127
+[15983292ms] [ERROR] ./Documents/GitHub/stackpulse/src/app/connect
+You cannot have two parallel pages that resolve to the same path. Please check /(app)/connect/[providerId] and /connect. @ http://localhost:4567/_next/static/chunks/cb717_next_dist_da59b082._.js:3127
+[15983292ms] [ERROR] ./Documents/GitHub/stackpulse/src/app/dashboard
+You cannot have two parallel pages that resolve to the same path. Please check /(app)/dashboard and /dashboard. @ http://localhost:4567/_next/static/chunks/cb717_next_dist_da59b082._.js:3127
+[15983294ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4567/login?_rsc=1foqh:0
+[15983318ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4567/login?_rsc=1foqh:0
+[15983345ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4567/login?_rsc=1foqh:0
+[15983365ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4567/login:0
+[15983553ms] Error: ./Documents/GitHub/stackpulse/src/app/connect
+You cannot have two parallel pages that resolve to the same path. Please check /(app)/connect and /connect.
+
+    at Object.getCompilationErrors (file:///Users/yhfy2006/Documents/GitHub/stackpulse/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/server/dev/hot-reloader-turbopack.js:997:55)
+    at DevBundlerService.getCompilationError (file:///Users/yhfy2006/Documents/GitHub/stackpulse/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/server/lib/dev-bundler-service.js:44:55)
+    at DevServer.getCompilationError (file:///Users/yhfy2006/Documents/GitHub/stackpulse/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/server/dev/next-dev-server.js:706:42)
+    at DevServer.findPageComponents (file:///Users/yhfy2006/Documents/GitHub/stackpulse/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/server/dev/next-dev-server.js:676:43)
+    at async DevServer.renderErrorToResponseImpl (file:///Users/yhfy2006/Documents/GitHub/stackpulse/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/server/base-server.js:1733:26)
+[15983510ms] [ERROR] ./Documents/GitHub/stackpulse/src/app/connect
+You cannot have two parallel pages that resolve to the same path. Please check /(app)/connect and /connect. @ http://localhost:4567/_next/static/chunks/cb717_next_dist_28b0f0a6._.js:1920
+[15983510ms] [ERROR] ./Documents/GitHub/stackpulse/src/app/connect
+You cannot have two parallel pages that resolve to the same path. Please check /(app)/connect/[providerId] and /connect. @ http://localhost:4567/_next/static/chunks/cb717_next_dist_28b0f0a6._.js:1920
+[15983510ms] [ERROR] ./Documents/GitHub/stackpulse/src/app/dashboard
+You cannot have two parallel pages that resolve to the same path. Please check /(app)/dashboard and /dashboard. @ http://localhost:4567/_next/static/chunks/cb717_next_dist_28b0f0a6._.js:1920
+[15983510ms] [ERROR] ./Documents/GitHub/stackpulse/src/app/connect
+You cannot have two parallel pages that resolve to the same path. Please check /(app)/connect and /connect. @ http://localhost:4567/_next/static/chunks/cb717_next_dist_28b0f0a6._.js:1920
+[15983510ms] [ERROR] ./Documents/GitHub/stackpulse/src/app/connect
+You cannot have two parallel pages that resolve to the same path. Please check /(app)/connect/[providerId] and /connect. @ http://localhost:4567/_next/static/chunks/cb717_next_dist_28b0f0a6._.js:1920
+[15983510ms] [ERROR] ./Documents/GitHub/stackpulse/src/app/dashboard
+You cannot have two parallel pages that resolve to the same path. Please check /(app)/dashboard and /dashboard. @ http://localhost:4567/_next/static/chunks/cb717_next_dist_28b0f0a6._.js:1920
+[15983510ms] [ERROR] ./Documents/GitHub/stackpulse/src/app/connect
+You cannot have two parallel pages that resolve to the same path. Please check /(app)/connect and /connect. @ http://localhost:4567/_next/static/chunks/cb717_next_dist_28b0f0a6._.js:1920
+[15983510ms] [ERROR] ./Documents/GitHub/stackpulse/src/app/connect
+You cannot have two parallel pages that resolve to the same path. Please check /(app)/connect/[providerId] and /connect. @ http://localhost:4567/_next/static/chunks/cb717_next_dist_28b0f0a6._.js:1920
+[15983510ms] [ERROR] ./Documents/GitHub/stackpulse/src/app/dashboard
+You cannot have two parallel pages that resolve to the same path. Please check /(app)/dashboard and /dashboard. @ http://localhost:4567/_next/static/chunks/cb717_next_dist_28b0f0a6._.js:1920
+[15983510ms] [ERROR] ./Documents/GitHub/stackpulse/src/app/connect
+You cannot have two parallel pages that resolve to the same path. Please check /(app)/connect and /connect. @ http://localhost:4567/_next/static/chunks/cb717_next_dist_28b0f0a6._.js:1920
+[15983510ms] [ERROR] ./Documents/GitHub/stackpulse/src/app/connect
+You cannot have two parallel pages that resolve to the same path. Please check /(app)/connect/[providerId] and /connect. @ http://localhost:4567/_next/static/chunks/cb717_next_dist_28b0f0a6._.js:1920
+[15983511ms] [ERROR] ./Documents/GitHub/stackpulse/src/app/dashboard
+You cannot have two parallel pages that resolve to the same path. Please check /(app)/dashboard and /dashboard. @ http://localhost:4567/_next/static/chunks/cb717_next_dist_28b0f0a6._.js:1920
+[15983511ms] [ERROR] ./Documents/GitHub/stackpulse/src/app/connect
+You cannot have two parallel pages that resolve to the same path. Please check /(app)/connect and /connect. @ http://localhost:4567/_next/static/chunks/cb717_next_dist_28b0f0a6._.js:1920
+[15983511ms] [ERROR] ./Documents/GitHub/stackpulse/src/app/connect
+You cannot have two parallel pages that resolve to the same path. Please check /(app)/connect/[providerId] and /connect. @ http://localhost:4567/_next/static/chunks/cb717_next_dist_28b0f0a6._.js:1920
+[15983511ms] [ERROR] ./Documents/GitHub/stackpulse/src/app/dashboard
+You cannot have two parallel pages that resolve to the same path. Please check /(app)/dashboard and /dashboard. @ http://localhost:4567/_next/static/chunks/cb717_next_dist_28b0f0a6._.js:1920
+[15983589ms] [ERROR] ./Documents/GitHub/stackpulse/src/app/connect
+You cannot have two parallel pages that resolve to the same path. Please check /(app)/connect and /connect. @ http://localhost:4567/_next/static/chunks/cb717_next_dist_28b0f0a6._.js:1920
+[15983589ms] [ERROR] ./Documents/GitHub/stackpulse/src/app/connect
+You cannot have two parallel pages that resolve to the same path. Please check /(app)/connect/[providerId] and /connect. @ http://localhost:4567/_next/static/chunks/cb717_next_dist_28b0f0a6._.js:1920
+[15983589ms] [ERROR] ./Documents/GitHub/stackpulse/src/app/dashboard
+You cannot have two parallel pages that resolve to the same path. Please check /(app)/dashboard and /dashboard. @ http://localhost:4567/_next/static/chunks/cb717_next_dist_28b0f0a6._.js:1920
+[15985639ms] [ERROR] ./Documents/GitHub/stackpulse/src/app/connect
+You cannot have two parallel pages that resolve to the same path. Please check /(app)/connect and /connect. @ http://localhost:4567/_next/static/chunks/cb717_next_dist_28b0f0a6._.js:1920
+[15985639ms] [ERROR] ./Documents/GitHub/stackpulse/src/app/connect
+You cannot have two parallel pages that resolve to the same path. Please check /(app)/connect/[providerId] and /connect. @ http://localhost:4567/_next/static/chunks/cb717_next_dist_28b0f0a6._.js:1920
+[15985639ms] [ERROR] ./Documents/GitHub/stackpulse/src/app/dashboard
+You cannot have two parallel pages that resolve to the same path. Please check /(app)/dashboard and /dashboard. @ http://localhost:4567/_next/static/chunks/cb717_next_dist_28b0f0a6._.js:1920
+[15986555ms] [ERROR] ./Documents/GitHub/stackpulse/src/app/connect
+You cannot have two parallel pages that resolve to the same path. Please check /(app)/connect and /connect. @ http://localhost:4567/_next/static/chunks/cb717_next_dist_28b0f0a6._.js:1920
+[15986555ms] [ERROR] ./Documents/GitHub/stackpulse/src/app/connect
+You cannot have two parallel pages that resolve to the same path. Please check /(app)/connect/[providerId] and /connect. @ http://localhost:4567/_next/static/chunks/cb717_next_dist_28b0f0a6._.js:1920
+[15986555ms] [ERROR] ./Documents/GitHub/stackpulse/src/app/dashboard
+You cannot have two parallel pages that resolve to the same path. Please check /(app)/dashboard and /dashboard. @ http://localhost:4567/_next/static/chunks/cb717_next_dist_28b0f0a6._.js:1920
+[15988102ms] [ERROR] ./Documents/GitHub/stackpulse/src/app/connect
+You cannot have two parallel pages that resolve to the same path. Please check /(app)/connect and /connect. @ http://localhost:4567/_next/static/chunks/cb717_next_dist_28b0f0a6._.js:1920
+[15988102ms] [ERROR] ./Documents/GitHub/stackpulse/src/app/connect
+You cannot have two parallel pages that resolve to the same path. Please check /(app)/connect/[providerId] and /connect. @ http://localhost:4567/_next/static/chunks/cb717_next_dist_28b0f0a6._.js:1920
+[15988102ms] [ERROR] ./Documents/GitHub/stackpulse/src/app/dashboard
+You cannot have two parallel pages that resolve to the same path. Please check /(app)/dashboard and /dashboard. @ http://localhost:4567/_next/static/chunks/cb717_next_dist_28b0f0a6._.js:1920
+[15990310ms] [ERROR] ./Documents/GitHub/stackpulse/src/app/connect
+You cannot have two parallel pages that resolve to the same path. Please check /(app)/connect and /connect. @ http://localhost:4567/_next/static/chunks/cb717_next_dist_28b0f0a6._.js:1920
+[15990310ms] [ERROR] ./Documents/GitHub/stackpulse/src/app/connect
+You cannot have two parallel pages that resolve to the same path. Please check /(app)/connect/[providerId] and /connect. @ http://localhost:4567/_next/static/chunks/cb717_next_dist_28b0f0a6._.js:1920
+[15990310ms] [ERROR] ./Documents/GitHub/stackpulse/src/app/dashboard
+You cannot have two parallel pages that resolve to the same path. Please check /(app)/dashboard and /dashboard. @ http://localhost:4567/_next/static/chunks/cb717_next_dist_28b0f0a6._.js:1920
