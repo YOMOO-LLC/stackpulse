@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verifySignatureAppRouter } from '@upstash/qstash/nextjs'
 import { createClient } from '@/lib/supabase/server'
 import { decrypt } from '@/lib/crypto'
 import { getProvider } from '@/lib/providers'
 import { evaluateAlerts } from '@/lib/alerts/engine'
 import { sendAlertEmail } from '@/lib/notifications/email'
 import { fetchProviderMetrics } from '@/lib/providers/fetch'
+
+export const dynamic = 'force-dynamic'
 
 async function handler(req: NextRequest) {
   const body = await req.json()
@@ -121,4 +122,10 @@ async function handler(req: NextRequest) {
   }
 }
 
-export const POST = verifySignatureAppRouter(handler)
+async function verifiedHandler(req: NextRequest) {
+  const { verifySignatureAppRouter } = await import('@upstash/qstash/nextjs')
+  const wrapped = verifySignatureAppRouter(handler)
+  return wrapped(req)
+}
+
+export const POST = verifiedHandler

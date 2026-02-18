@@ -15,7 +15,10 @@ describe('AppSidebar service links', () => {
   it('links each service to its detail page', () => {
     render(<AppSidebar services={services} userEmail="dev@test.com" />)
     const links = screen.getAllByRole('link')
-    const serviceLinks = links.filter((l) => l.getAttribute('href')?.startsWith('/dashboard/'))
+    const serviceLinks = links.filter((l) => {
+      const href = l.getAttribute('href')
+      return href?.startsWith('/dashboard/svc-')
+    })
     expect(serviceLinks).toHaveLength(2)
     expect(serviceLinks[0].getAttribute('href')).toBe('/dashboard/svc-123')
     expect(serviceLinks[1].getAttribute('href')).toBe('/dashboard/svc-456')
