@@ -38,7 +38,7 @@ function MetricDisplay({ collector }: { collector: CollectorDisplay }) {
     return (
       <div className="space-y-1">
         <p className="text-xs text-muted-foreground">{name}</p>
-        <p className="text-sm text-muted-foreground">等待采集...</p>
+        <p className="text-sm text-muted-foreground">Awaiting first sync...</p>
       </div>
     )
   }
@@ -124,11 +124,11 @@ function MetricDisplay({ collector }: { collector: CollectorDisplay }) {
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime()
   const minutes = Math.floor(diff / 60000)
-  if (minutes < 1) return '刚刚'
-  if (minutes < 60) return `${minutes} 分钟前`
+  if (minutes < 1) return 'just now'
+  if (minutes < 60) return `${minutes}m ago`
   const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours} 小时前`
-  return `${Math.floor(hours / 24)} 天前`
+  if (hours < 24) return `${hours}h ago`
+  return `${Math.floor(hours / 24)}d ago`
 }
 
 export function ServiceCard({ providerId, providerName, label, collectors, authExpired }: ServiceCardProps) {
@@ -147,7 +147,7 @@ export function ServiceCard({ providerId, providerName, label, collectors, authE
 
   return (
     <div className="bg-card border border-border rounded-xl p-5 hover:border-border/80 transition-all hover:shadow-[0_0_0_1px_rgba(255,255,255,0.08)] group">
-      {/* 头部 */}
+      {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
           <ProviderIcon providerId={providerId} size={36} />
@@ -161,20 +161,20 @@ export function ServiceCard({ providerId, providerName, label, collectors, authE
         <StatusDot status={overallStatus} showLabel />
       </div>
 
-      {/* 指标 */}
+      {/* Metrics */}
       <div className="space-y-3">
         {authExpired && (
-          <p className="text-xs text-red-400">凭证已过期，请重新连接</p>
+          <p className="text-xs text-red-400">Credentials expired — please reconnect</p>
         )}
         {collectors.map((collector) => (
           <MetricDisplay key={collector.id} collector={collector} />
         ))}
       </div>
 
-      {/* 底部时间戳 */}
+      {/* Timestamp */}
       {lastUpdated && (
         <p className="text-xs text-muted-foreground mt-4 pt-3 border-t border-border/50">
-          更新于 {timeAgo(lastUpdated)}
+          Updated {timeAgo(lastUpdated)}
         </p>
       )}
     </div>

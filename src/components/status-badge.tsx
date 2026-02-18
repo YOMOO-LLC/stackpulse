@@ -3,10 +3,10 @@ import { Badge } from '@/components/ui/badge'
 type Status = 'healthy' | 'warning' | 'critical' | 'unknown'
 
 const config: Record<Status, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
-  healthy: { label: '正常', variant: 'default' },
-  warning: { label: '警告', variant: 'secondary' },
-  critical: { label: '异常', variant: 'destructive' },
-  unknown: { label: '未知', variant: 'outline' },
+  healthy: { label: 'Healthy', variant: 'default' },
+  warning: { label: 'Warning', variant: 'secondary' },
+  critical: { label: 'Critical', variant: 'destructive' },
+  unknown: { label: 'Unknown', variant: 'outline' },
 }
 
 export function StatusBadge({ status }: { status: Status }) {

@@ -8,10 +8,10 @@ const DOT_COLOR: Record<Status, string> = {
 }
 
 const LABEL: Record<Status, string> = {
-  healthy:  '正常',
-  warning:  '警告',
-  critical: '异常',
-  unknown:  '未知',
+  healthy:  'Healthy',
+  warning:  'Warning',
+  critical: 'Critical',
+  unknown:  'Unknown',
 }
 
 interface StatusDotProps {
