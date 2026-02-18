@@ -2,7 +2,10 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
 import { ServiceCard } from '@/components/service-card'
+import { StatusDot } from '@/components/status-dot'
 import { getProvider } from '@/lib/providers'
+
+type Status = 'healthy' | 'warning' | 'critical' | 'unknown'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -21,7 +24,10 @@ export default async function DashboardPage() {
 
   const servicesWithMeta = (services ?? []).map((service) => {
     const provider = getProvider(service.provider_id)
-    const snapshots = service.metric_snapshots ?? []
+    const snapshots = (service.metric_snapshots ?? []) as Array<{
+      collector_id: string; value: number | null; value_text: string | null;
+      unit: string | null; status: string; fetched_at: string
+    }>
 
     const latestByCollector = new Map<string, typeof snapshots[number]>()
     for (const snap of [...snapshots].sort((a, b) =>
@@ -43,41 +49,59 @@ export default async function DashboardPage() {
         id: c.id,
         name: c.name,
         type: c.metricType,
-        snapshot: latestByCollector.get(c.id) ?? null,
+        snapshot: (latestByCollector.get(c.id) ?? null) as {
+          collector_id: string; value: number | null; value_text: string | null;
+          unit: string | null; status: Status; fetched_at: string
+        } | null,
       })),
     }
   })
 
-  const hasIssues = servicesWithMeta.some((s) =>
-    s.collectors.some((c) => c.snapshot?.status === 'warning' || c.snapshot?.status === 'critical')
-  )
+  const totalCount = servicesWithMeta.length
+  const healthyCount = servicesWithMeta.filter((s) =>
+    s.collectors.every((c) => !c.snapshot || c.snapshot.status === 'healthy')
+  ).length
+  const hasIssues = healthyCount < totalCount
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="p-8">
+      {/* 页面头部 */}
+      <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold">服务监控</h1>
-          {servicesWithMeta.length > 0 && (
-            <p className="text-sm text-muted-foreground mt-1">
-              {hasIssues ? '⚠ 部分服务需要关注' : '● 全部服务运行正常'}
-            </p>
+          <h1 className="text-xl font-semibold text-foreground">服务监控</h1>
+          {totalCount > 0 && (
+            <div className="flex items-center gap-2 mt-1">
+              <StatusDot status={hasIssues ? 'warning' : 'healthy'} />
+              <span className="text-sm text-muted-foreground">
+                {hasIssues
+                  ? `${totalCount - healthyCount} 个服务需要关注`
+                  : `全部 ${totalCount} 个服务运行正常`
+                }
+              </span>
+            </div>
           )}
         </div>
-        <Button asChild>
+        <Button asChild size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground">
           <Link href="/connect">+ 添加服务</Link>
         </Button>
       </div>
 
+      {/* 空状态 */}
       {servicesWithMeta.length === 0 ? (
-        <div className="text-center py-24 text-muted-foreground">
-          <p className="text-lg">还没有连接任何服务</p>
-          <p className="text-sm mt-2">点击「添加服务」开始监控你的第三方 API</p>
-          <Button asChild className="mt-4">
-            <Link href="/connect">添加第一个服务</Link>
+        <div className="flex flex-col items-center justify-center py-32 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-card border border-border flex items-center justify-center mb-6">
+            <span className="text-2xl">📡</span>
+          </div>
+          <h2 className="text-base font-semibold text-foreground mb-2">还没有连接任何服务</h2>
+          <p className="text-sm text-muted-foreground mb-6 max-w-xs">
+            连接你的 API 服务，实时掌握余额、状态和错误量
+          </p>
+          <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground">
+            <Link href="/connect">连接第一个服务</Link>
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {servicesWithMeta.map((service) => (
             <ServiceCard key={service.id} {...service} />
           ))}
