@@ -56,11 +56,11 @@ export function AppSidebar({ services, userEmail }: AppSidebarProps) {
           <p className="text-xs text-muted-foreground px-2 py-2">No services connected</p>
         ) : (
           services.map((service) => {
-            const isActive = pathname === `/dashboard`
+            const isActive = pathname.startsWith('/dashboard/' + service.id)
             return (
               <Link
                 key={service.id}
-                href="/dashboard"
+                href={'/dashboard/' + service.id}
                 className={`
                   flex items-center gap-2.5 px-2 py-1.5 rounded-md text-sm
                   transition-colors relative group
