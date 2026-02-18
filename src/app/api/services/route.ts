@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getProvider } from '@/lib/providers'
 import { encrypt } from '@/lib/crypto'
+import { registerServiceSchedule } from '@/lib/qstash'
 import { fetchOpenRouterMetrics } from '@/lib/providers/openrouter'
 import { fetchResendMetrics } from '@/lib/providers/resend'
 import { fetchSentryMetrics } from '@/lib/providers/sentry'
@@ -165,7 +166,18 @@ export async function POST(req: NextRequest) {
       )
     }
   } catch {
-    // 首次采集失败不影响服务保存
+    // Initial collection failure does not affect service save
+  }
+
+  // Register QStash schedule for recurring polling
+  try {
+    const scheduleId = await registerServiceSchedule(data.id)
+    await supabase
+      .from('connected_services')
+      .update({ qstash_schedule_id: scheduleId })
+      .eq('id', data.id)
+  } catch {
+    console.error('[qstash] Failed to register schedule for', data.id)
   }
 
   return NextResponse.json({ id: data.id }, { status: 201 })
