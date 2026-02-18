@@ -52,3 +52,12 @@ npx vitest --coverage   # 生成覆盖率报告
 3. **Refactor** — 在测试保护下重构，保持测试绿色
 
 不得在没有对应失败测试的情况下直接写实现代码。
+
+## 测试账号
+
+| 字段 | 值 |
+|------|----|
+| Email | `dev@stackpulse.local` |
+| Password | `Test1234!` |
+
+seed 文件：`supabase/seed.sql`，运行 `supabase db reset` 可重建本地数据库并插入测试账号。
