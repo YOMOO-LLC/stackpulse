@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { signInWithEmail, signUpWithEmail } from './actions'
 
 export default function LoginPage() {
@@ -19,7 +18,6 @@ export default function LoginPage() {
       const result = mode === 'login'
         ? await signInWithEmail(formData)
         : await signUpWithEmail(formData)
-
       if (result && 'error' in result) setMessage(result.error ?? '')
       else if (result && 'message' in result) setMessage(result.message ?? '')
     } finally {
@@ -27,43 +25,78 @@ export default function LoginPage() {
     }
   }
 
+  const isError = message && (
+    message.includes('错误') || message.includes('failed') ||
+    message.includes('Invalid') || message.includes('invalid')
+  )
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle className="text-2xl">StackPulse</CardTitle>
-          <CardDescription>
-            {mode === 'login' ? '登录你的账号' : '创建新账号'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form action={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">邮箱</Label>
-              <Input id="email" name="email" type="email" required autoComplete="email" />
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+      <div className="w-full max-w-sm">
+        {/* Logo */}
+        <div className="flex items-center gap-2 mb-8 justify-center">
+          <span className="w-7 h-7 rounded-lg bg-emerald-500 flex items-center justify-center text-xs font-bold text-white">
+            SP
+          </span>
+          <span className="text-lg font-semibold text-foreground">StackPulse</span>
+        </div>
+
+        {/* 卡片 */}
+        <div className="bg-card border border-border rounded-xl p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.04)]">
+          <h2 className="text-base font-semibold text-foreground mb-1">
+            {mode === 'login' ? '登录账号' : '创建账号'}
+          </h2>
+          <p className="text-xs text-muted-foreground mb-6">
+            {mode === 'login' ? '欢迎回来' : '开始监控你的 API 服务'}
+          </p>
+
+          <form action={handleSubmit} className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="email" className="text-xs text-muted-foreground">邮箱</Label>
+              <Input
+                id="email" name="email" type="email" required
+                autoComplete="email"
+                placeholder="you@example.com"
+                className="bg-secondary border-border text-foreground placeholder:text-muted-foreground/40"
+              />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">密码</Label>
-              <Input id="password" name="password" type="password" required autoComplete={mode === 'login' ? 'current-password' : 'new-password'} />
+            <div className="space-y-1.5">
+              <Label htmlFor="password" className="text-xs text-muted-foreground">密码</Label>
+              <Input
+                id="password" name="password" type="password" required
+                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                placeholder="••••••••"
+                className="bg-secondary border-border text-foreground placeholder:text-muted-foreground/40"
+              />
             </div>
+
             {message && (
-              <p className={`text-sm ${message.includes('错误') || message.includes('failed') || message.includes('Invalid') ? 'text-destructive' : 'text-muted-foreground'}`}>
+              <p className={`text-xs px-3 py-2 rounded-md ${
+                isError
+                  ? 'text-red-400 bg-red-500/10 border border-red-500/20'
+                  : 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20'
+              }`}>
                 {message}
               </p>
             )}
-            <Button type="submit" className="w-full" disabled={pending}>
+
+            <Button
+              type="submit"
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
+              disabled={pending}
+            >
               {pending ? '处理中...' : mode === 'login' ? '登录' : '注册'}
             </Button>
           </form>
-          <Button
-            variant="ghost"
-            className="w-full mt-2"
+
+          <button
             onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setMessage('') }}
+            className="w-full mt-4 text-xs text-muted-foreground hover:text-foreground transition-colors text-center"
           >
             {mode === 'login' ? '没有账号？注册' : '已有账号？登录'}
-          </Button>
-        </CardContent>
-      </Card>
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
