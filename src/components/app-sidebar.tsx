@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Plus, LogOut } from 'lucide-react'
+import { Plus, LogOut, Clock, Bell } from 'lucide-react'
 import { signOut } from '@/app/(auth)/login/actions'
 import { Button } from '@/components/ui/button'
 
@@ -26,6 +26,11 @@ const STATUS_COLORS: Record<Status, string> = {
   critical: 'bg-red-500',
   unknown:  'bg-zinc-600',
 }
+
+const NAV_LINKS = [
+  { label: 'History', href: '/dashboard/history', icon: Clock },
+  { label: 'Channels', href: '/dashboard/channels', icon: Bell },
+]
 
 const PROVIDER_INITIALS: Record<string, string> = {
   openrouter: 'OR',
@@ -92,6 +97,29 @@ export function AppSidebar({ services, userEmail }: AppSidebarProps) {
           })
         )}
       </nav>
+
+      {/* Navigation links */}
+      <div className="px-2">
+        <div className="border-t border-border my-2" />
+        <div className="space-y-0.5">
+          {NAV_LINKS.map(({ label, href, icon: Icon }) => (
+            <Link
+              key={href}
+              href={href}
+              className={`
+                flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors
+                ${pathname === href
+                  ? 'bg-secondary text-foreground'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'
+                }
+              `}
+            >
+              <Icon className="h-4 w-4" />
+              {label}
+            </Link>
+          ))}
+        </div>
+      </div>
 
       {/* Bottom actions */}
       <div className="px-2 py-3 border-t border-border space-y-1">
