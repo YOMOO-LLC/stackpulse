@@ -1,6 +1,6 @@
 export type MetricType = 'currency' | 'percentage' | 'count' | 'status' | 'boolean'
 
-export type Category = 'ai' | 'monitoring' | 'email' | 'hosting' | 'payment' | 'other'
+export type Category = 'ai' | 'monitoring' | 'email' | 'hosting' | 'payment' | 'infrastructure' | 'other'
 
 export type AlertCondition = 'lt' | 'gt' | 'eq' | 'status_is'
 
@@ -24,7 +24,7 @@ export interface Collector {
   metricType: MetricType
   unit: string
   refreshInterval: number
-  endpoint: string
+  endpoint?: string
 }
 
 export interface ApiKeyAuth {
@@ -59,7 +59,7 @@ export interface ServiceProvider {
   name: string
   category: Category
   icon: string
-  authType: 'api_key' | 'oauth2' | 'hybrid'
+  authType: 'api_key' | 'oauth2' | 'hybrid' | 'token'
   credentials: Credentials[]
   collectors: Collector[]
   alerts: AlertTemplate[]
@@ -67,6 +67,6 @@ export interface ServiceProvider {
 
 export const VALID_METRIC_TYPES: MetricType[] = ['currency', 'percentage', 'count', 'status', 'boolean']
 
-export const VALID_CATEGORIES: Category[] = ['ai', 'monitoring', 'email', 'hosting', 'payment', 'other']
+export const VALID_CATEGORIES: Category[] = ['ai', 'monitoring', 'email', 'hosting', 'payment', 'infrastructure', 'other']
 
 export const VALID_ALERT_CONDITIONS: AlertCondition[] = ['lt', 'gt', 'eq', 'status_is']
