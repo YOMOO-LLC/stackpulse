@@ -25,14 +25,14 @@ export default function ConnectProviderPage({
   const [errorMsg, setErrorMsg] = useState('')
 
   if (!provider) return (
-    <div className="p-8 text-muted-foreground">未知服务: {providerId}</div>
+    <div className="p-8 text-muted-foreground">Unknown provider: {providerId}</div>
   )
 
   if (provider.authType === 'oauth2') {
     return (
       <div className="p-8 max-w-md">
-        <p className="text-muted-foreground text-sm">OAuth 流程暂未实现（Phase 2）</p>
-        <Button variant="outline" size="sm" className="mt-4" onClick={() => router.back()}>返回</Button>
+        <p className="text-muted-foreground text-sm">OAuth flow not yet implemented (Phase 2)</p>
+        <Button variant="outline" size="sm" className="mt-4" onClick={() => router.back()}>Go back</Button>
       </div>
     )
   }
@@ -51,14 +51,14 @@ export default function ConnectProviderPage({
 
       if (validateRes.status === 401) {
         setStatus('error')
-        setErrorMsg('登录已过期，请刷新页面重新登录')
+        setErrorMsg('Session expired — please refresh and sign in again')
         return
       }
 
       const validateData = await validateRes.json()
       if (!validateData.valid) {
         setStatus('error')
-        setErrorMsg('凭证验证失败，请检查 API Key 是否正确')
+        setErrorMsg('Invalid credentials — please check your API key')
         return
       }
 
@@ -71,14 +71,14 @@ export default function ConnectProviderPage({
 
       if (!saveRes.ok) {
         setStatus('error')
-        setErrorMsg('保存失败，请重试')
+        setErrorMsg('Failed to save — please try again')
         return
       }
 
       router.push('/dashboard')
     } catch {
       setStatus('error')
-      setErrorMsg('网络错误，请重试')
+      setErrorMsg('Network error — please try again')
     }
   }
 
@@ -86,30 +86,27 @@ export default function ConnectProviderPage({
 
   return (
     <div className="p-8">
-      {/* 面包屑 */}
       <Link
         href="/connect"
         className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
       >
         <ChevronLeft className="h-4 w-4" />
-        返回选择服务
+        Back to services
       </Link>
 
-      {/* 表单卡片 */}
       <div className="max-w-md">
         <div className="bg-card border border-border rounded-xl p-6">
-          {/* Provider 头部 */}
           <div className="flex items-center gap-3 mb-6 pb-4 border-b border-border">
             <ProviderIcon providerId={providerId} size={40} />
             <div>
-              <h1 className="text-base font-semibold text-foreground">连接 {provider.name}</h1>
-              <p className="text-xs text-muted-foreground">输入 API Key 完成连接</p>
+              <h1 className="text-base font-semibold text-foreground">Connect {provider.name}</h1>
+              <p className="text-xs text-muted-foreground">Enter your API key to connect</p>
             </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">备注名称（可选）</Label>
+              <Label className="text-xs text-muted-foreground">Display name (optional)</Label>
               <Input
                 placeholder={provider.name}
                 value={label}
@@ -148,8 +145,8 @@ export default function ConnectProviderPage({
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
               disabled={isLoading}
             >
-              {status === 'validating' ? '验证中...' :
-               status === 'saving' ? '保存中...' : '连接'}
+              {status === 'validating' ? 'Verifying...' :
+               status === 'saving' ? 'Saving...' : 'Connect'}
             </Button>
           </form>
         </div>
