@@ -52,6 +52,9 @@ export async function fetchProviderMetrics(
       return [
         { collectorId: 'rate_limit_remaining', value: r.rateLimitRemaining ?? null, valueText: null, unit: 'requests', status: r.status },
         { collectorId: 'rate_limit_used', value: r.rateLimitUsed ?? null, valueText: null, unit: 'requests', status: 'healthy' },
+        { collectorId: 'graphql_rate_limit_remaining', value: r.graphqlRemaining ?? null, valueText: null, unit: 'requests', status: 'healthy' },
+        { collectorId: 'search_rate_limit_remaining', value: r.searchRemaining ?? null, valueText: null, unit: 'requests', status: 'healthy' },
+        { collectorId: 'public_repos', value: r.publicRepos ?? null, valueText: null, unit: 'repos', status: 'healthy' },
       ]
     }
     case 'vercel': {
