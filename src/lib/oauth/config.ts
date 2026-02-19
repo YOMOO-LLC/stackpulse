@@ -21,7 +21,7 @@ export function getOAuthConfig(providerId: string): OAuthProviderConfig | null {
       clientSecret: process.env.GITHUB_CLIENT_SECRET ?? '',
       authorizationUrl: 'https://github.com/login/oauth/authorize',
       tokenUrl: 'https://github.com/login/oauth/access_token',
-      scopes: ['read:user'],
+      scopes: ['user'],
       redirectUri: `${appUrl}/api/oauth/callback/github`,
       supportsRefresh: false,
     },
