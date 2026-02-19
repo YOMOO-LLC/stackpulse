@@ -25,6 +25,7 @@ interface MetricChartProps {
   snapshots: Snapshot[]
   unit: string
   threshold?: number
+  height?: number
 }
 
 function formatValue(value: number, metricType: MetricType, unit: string): string {
@@ -39,7 +40,7 @@ function formatTime(iso: string): string {
     d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
 }
 
-export function MetricChart({ metricType, snapshots, unit, threshold }: MetricChartProps) {
+export function MetricChart({ metricType, snapshots, unit, threshold, height = 160 }: MetricChartProps) {
   const data = snapshots
     .filter((s) => s.value !== null)
     .map((s) => ({
@@ -50,7 +51,7 @@ export function MetricChart({ metricType, snapshots, unit, threshold }: MetricCh
 
   if (data.length === 0) {
     return (
-      <div className="h-[160px] flex items-center justify-center text-sm text-muted-foreground">
+      <div className="flex items-center justify-center text-sm text-muted-foreground" style={{ height }}>
         No data yet
       </div>
     )
@@ -60,7 +61,7 @@ export function MetricChart({ metricType, snapshots, unit, threshold }: MetricCh
 
   if (metricType === 'count') {
     return (
-      <ResponsiveContainer width="100%" height={160}>
+      <ResponsiveContainer width="100%" height={height}>
         <BarChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
           <XAxis dataKey="label" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} hide />
           <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={tickFormatter} width={45} />
@@ -75,7 +76,7 @@ export function MetricChart({ metricType, snapshots, unit, threshold }: MetricCh
   }
 
   return (
-    <ResponsiveContainer width="100%" height={160}>
+    <ResponsiveContainer width="100%" height={height}>
       <AreaChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
         <defs>
           <linearGradient id={`grad-${metricType}`} x1="0" y1="0" x2="0" y2="1">

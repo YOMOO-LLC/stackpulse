@@ -81,10 +81,13 @@ export function MetricSection({ serviceId, collectors, snapshots }: MetricSectio
     )
   }
 
+  const useGrid = collectors.length >= 3
+  const chartHeight = useGrid ? 120 : 160
+
   return (
     <section className="mb-8">
       <h2 className="text-xs font-semibold tracking-widest text-muted-foreground mb-3">METRICS</h2>
-      <div className="space-y-4">
+      <div className={useGrid ? 'grid grid-cols-1 sm:grid-cols-2 gap-4' : 'space-y-4'}>
         {collectors.map((collector) => {
           const collectorSnaps = liveSnapshots
             .filter((s) => s.collector_id === collector.id)
@@ -106,6 +109,7 @@ export function MetricSection({ serviceId, collectors, snapshots }: MetricSectio
                 metricType={collector.metricType}
                 snapshots={collectorSnaps}
                 unit={collector.unit}
+                height={chartHeight}
               />
               {latest && (
                 <p className="text-xs text-muted-foreground mt-2">
