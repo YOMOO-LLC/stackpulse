@@ -10,37 +10,42 @@ export const githubProvider: ServiceProvider = {
     { key: 'token', label: 'Personal Access Token', type: 'password', required: true, placeholder: 'ghp_...' },
   ],
   collectors: [
-    { id: 'actions_minutes_used', name: 'Actions Minutes Used', metricType: 'count', unit: 'minutes', refreshInterval: 300 },
-    { id: 'actions_minutes_limit', name: 'Actions Minutes Limit', metricType: 'count', unit: 'minutes', refreshInterval: 300 },
+    { id: 'rate_limit_remaining', name: 'API Rate Limit Remaining', metricType: 'count', unit: 'requests', refreshInterval: 300 },
+    { id: 'rate_limit_used', name: 'API Rate Limit Used', metricType: 'count', unit: 'requests', refreshInterval: 300 },
   ],
   alerts: [
-    { id: 'actions-usage', name: 'High Actions Usage', collectorId: 'actions_minutes_used', condition: 'gt', defaultThreshold: 1600, message: 'GitHub Actions usage > 80%' },
+    { id: 'rate-limit-low', name: 'Rate Limit Low', collectorId: 'rate_limit_remaining', condition: 'lt', defaultThreshold: 500, message: 'GitHub API rate limit below 500 requests' },
   ],
 }
 
 export interface GitHubMetricResult {
-  minutesUsed: number | null
-  minutesLimit: number | null
+  rateLimitRemaining: number | null
+  rateLimitUsed: number | null
+  rateLimitTotal: number | null
   status: 'healthy' | 'warning' | 'unknown'
   error?: string
 }
 
 export async function fetchGitHubMetrics(token: string): Promise<GitHubMetricResult> {
   try {
-    const res = await fetch('https://api.github.com/user/settings/billing/actions', {
+    const res = await fetch('https://api.github.com/rate_limit', {
       headers: {
         Authorization: `Bearer ${token}`,
         'X-GitHub-Api-Version': '2022-11-28',
         Accept: 'application/vnd.github+json',
       },
     })
-    if (!res.ok) return { minutesUsed: null, minutesLimit: null, status: 'unknown', error: `HTTP ${res.status}` }
+    if (!res.ok) {
+      return { rateLimitRemaining: null, rateLimitUsed: null, rateLimitTotal: null, status: 'unknown', error: `HTTP ${res.status}` }
+    }
     const json = await res.json()
-    const minutesUsed = json.total_minutes_used ?? 0
-    const minutesLimit = json.included_minutes ?? 0
-    const pct = minutesLimit > 0 ? minutesUsed / minutesLimit : 0
-    return { minutesUsed, minutesLimit, status: pct > 0.8 ? 'warning' : 'healthy' }
+    const core = json.resources?.core ?? json.rate
+    const remaining = core?.remaining ?? null
+    const limit = core?.limit ?? null
+    const used = core?.used ?? null
+    const pct = limit && limit > 0 ? (limit - (remaining ?? 0)) / limit : 0
+    return { rateLimitRemaining: remaining, rateLimitUsed: used, rateLimitTotal: limit, status: pct > 0.8 ? 'warning' : 'healthy' }
   } catch {
-    return { minutesUsed: null, minutesLimit: null, status: 'unknown', error: 'Network error' }
+    return { rateLimitRemaining: null, rateLimitUsed: null, rateLimitTotal: null, status: 'unknown', error: 'Network error' }
   }
 }

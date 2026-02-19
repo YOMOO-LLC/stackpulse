@@ -16,7 +16,7 @@ describe('getOAuthConfig', () => {
     const config = getOAuthConfig('github')
     expect(config).not.toBeNull()
     expect(config!.authorizationUrl).toContain('github.com')
-    expect(config!.scopes).toContain('read:user')
+    expect(config!.scopes).toContain('user')
     expect(config!.redirectUri).toContain('/api/oauth/callback/github')
   })
 

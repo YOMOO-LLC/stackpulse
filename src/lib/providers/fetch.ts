@@ -50,8 +50,8 @@ export async function fetchProviderMetrics(
       const token = credentials.access_token ?? credentials.token
       const r = await fetchGitHubMetrics(token)
       return [
-        { collectorId: 'actions_minutes_used', value: r.minutesUsed ?? null, valueText: null, unit: 'minutes', status: r.status },
-        { collectorId: 'actions_minutes_limit', value: r.minutesLimit ?? null, valueText: null, unit: 'minutes', status: 'healthy' },
+        { collectorId: 'rate_limit_remaining', value: r.rateLimitRemaining ?? null, valueText: null, unit: 'requests', status: r.status },
+        { collectorId: 'rate_limit_used', value: r.rateLimitUsed ?? null, valueText: null, unit: 'requests', status: 'healthy' },
       ]
     }
     case 'vercel': {
