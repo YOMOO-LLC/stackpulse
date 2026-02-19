@@ -7,6 +7,7 @@ import { MetricSection } from './metric-section'
 import { AlertRulesSection } from './alert-rules-section'
 import { EventsSection } from './events-section'
 import { DeleteServiceButton } from './delete-service-button'
+import { SyncButton } from './sync-button'
 import { CredentialReauthBanner } from '@/components/credential-reauth-banner'
 import { ArrowLeft } from 'lucide-react'
 
@@ -56,7 +57,10 @@ export default async function ServiceDetailPage({ params }: PageProps) {
             </h1>
           </div>
         </div>
-        <DeleteServiceButton serviceId={serviceId} />
+        <div className="flex items-center gap-2">
+          <SyncButton serviceId={serviceId} />
+          <DeleteServiceButton serviceId={serviceId} />
+        </div>
       </div>
 
       {service.auth_expired && provider && (
