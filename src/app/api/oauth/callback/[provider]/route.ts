@@ -5,6 +5,7 @@ import { getOAuthConfig } from '@/lib/oauth/config'
 import { exchangeCodeForToken, type OAuthTokens } from '@/lib/oauth/exchange'
 import { encrypt } from '@/lib/crypto'
 import { getProvider } from '@/lib/providers'
+import { fetchProviderMetrics } from '@/lib/providers/fetch'
 import { registerServiceSchedule } from '@/lib/qstash'
 
 async function getSentryOrgSlug(accessToken: string): Promise<string | null> {
@@ -83,6 +84,25 @@ export async function GET(
       .single()
 
     if (dbError) throw dbError
+
+    // Initial metric collection (non-fatal)
+    try {
+      const snapshots = await fetchProviderMetrics(provider, credentialsPayload as unknown as Record<string, string>)
+      if (snapshots.length > 0) {
+        await supabase.from('metric_snapshots').insert(
+          snapshots.map((s) => ({
+            connected_service_id: data.id,
+            collector_id: s.collectorId,
+            value: s.value,
+            value_text: s.valueText,
+            unit: s.unit,
+            status: s.status,
+          }))
+        )
+      }
+    } catch {
+      // Initial collection failure does not affect service save
+    }
 
     // Register QStash schedule (non-fatal)
     try {
