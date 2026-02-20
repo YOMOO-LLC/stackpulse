@@ -17,6 +17,13 @@ export const openaiProvider: ServiceProvider = {
     { id: 'low-credits', name: 'Low Credits', collectorId: 'credit_balance', condition: 'lt', defaultThreshold: 5, message: 'OpenAI credits below $5' },
     { id: 'high-usage', name: 'High Usage', collectorId: 'monthly_usage', condition: 'gt', defaultThreshold: 50, message: 'OpenAI monthly usage > $50' },
   ],
+  fetchMetrics: async (credentials) => {
+    const r = await fetchOpenAIMetrics(credentials.apiKey)
+    return [
+      { collectorId: 'credit_balance', value: r.creditBalance ?? null, valueText: null, unit: 'USD', status: r.status },
+      { collectorId: 'monthly_usage', value: r.monthlyUsage ?? null, valueText: null, unit: 'USD', status: r.status },
+    ]
+  },
 }
 
 export interface OpenAIMetricResult {

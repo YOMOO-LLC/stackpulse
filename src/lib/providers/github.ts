@@ -19,6 +19,17 @@ export const githubProvider: ServiceProvider = {
   alerts: [
     { id: 'rate-limit-low', name: 'Rate Limit Low', collectorId: 'rate_limit_remaining', condition: 'lt', defaultThreshold: 500, message: 'GitHub API rate limit below 500 requests' },
   ],
+  fetchMetrics: async (credentials) => {
+    const token = credentials.access_token ?? credentials.token
+    const r = await fetchGitHubMetrics(token)
+    return [
+      { collectorId: 'rate_limit_remaining', value: r.rateLimitRemaining ?? null, valueText: null, unit: 'requests', status: r.status },
+      { collectorId: 'rate_limit_used', value: r.rateLimitUsed ?? null, valueText: null, unit: 'requests', status: 'healthy' },
+      { collectorId: 'graphql_rate_limit_remaining', value: r.graphqlRemaining ?? null, valueText: null, unit: 'requests', status: 'healthy' },
+      { collectorId: 'search_rate_limit_remaining', value: r.searchRemaining ?? null, valueText: null, unit: 'requests', status: 'healthy' },
+      { collectorId: 'public_repos', value: r.publicRepos ?? null, valueText: null, unit: 'repos', status: 'healthy' },
+    ]
+  },
 }
 
 export interface GitHubMetricResult {

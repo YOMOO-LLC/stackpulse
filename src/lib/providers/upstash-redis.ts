@@ -19,6 +19,13 @@ export const upstashRedisProvider: ServiceProvider = {
     { id: 'high-memory', name: 'High Memory', collectorId: 'memory_usage', condition: 'gt', defaultThreshold: 80, message: 'Redis memory > 80%' },
     { id: 'high-commands', name: 'High Commands', collectorId: 'daily_commands', condition: 'gt', defaultThreshold: 8000, message: 'Daily commands > 8000' },
   ],
+  fetchMetrics: async (credentials) => {
+    const r = await fetchUpstashRedisMetrics(credentials.email, credentials.apiKey, credentials.databaseId)
+    return [
+      { collectorId: 'daily_commands', value: r.dailyCommands ?? null, valueText: null, unit: 'commands', status: r.status },
+      { collectorId: 'memory_usage', value: r.memoryUsage ?? null, valueText: null, unit: '%', status: r.status },
+    ]
+  },
 }
 
 export interface UpstashRedisMetricResult {

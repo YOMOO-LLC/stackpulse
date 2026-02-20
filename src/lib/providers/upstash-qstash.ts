@@ -18,6 +18,14 @@ export const upstashQStashProvider: ServiceProvider = {
     { id: 'high-quota', name: 'High Quota', collectorId: 'monthly_quota_used', condition: 'gt', defaultThreshold: 80, message: 'QStash quota > 80%' },
     { id: 'failed-msgs', name: 'Failed Messages', collectorId: 'messages_failed', condition: 'gt', defaultThreshold: 10, message: 'More than 10 failed messages' },
   ],
+  fetchMetrics: async (credentials) => {
+    const r = await fetchUpstashQStashMetrics(credentials.token)
+    return [
+      { collectorId: 'messages_delivered', value: r.messagesDelivered ?? null, valueText: null, unit: 'messages', status: r.status },
+      { collectorId: 'messages_failed', value: r.messagesFailed ?? null, valueText: null, unit: 'messages', status: r.status },
+      { collectorId: 'monthly_quota_used', value: r.quotaUsed ?? null, valueText: null, unit: '%', status: r.status },
+    ]
+  },
 }
 
 export interface UpstashQStashMetricResult {

@@ -17,6 +17,14 @@ export const vercelProvider: ServiceProvider = {
     { id: 'high-bandwidth', name: 'High Bandwidth', collectorId: 'bandwidth_used', condition: 'gt', defaultThreshold: 80, message: 'Bandwidth > 80 GB' },
     { id: 'deploy-failed', name: 'Deployment Failed', collectorId: 'deployment_status', condition: 'status_is', defaultThreshold: 'ERROR', message: 'Deployment failed' },
   ],
+  fetchMetrics: async (credentials) => {
+    const token = credentials.access_token ?? credentials.token
+    const r = await fetchVercelMetrics(token)
+    return [
+      { collectorId: 'bandwidth_used', value: r.bandwidthUsed ?? null, valueText: null, unit: 'GB', status: r.status },
+      { collectorId: 'deployment_status', value: null, valueText: r.deploymentStatus ?? null, unit: '', status: r.status },
+    ]
+  },
 }
 
 export interface VercelMetricResult {
