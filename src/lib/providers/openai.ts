@@ -10,8 +10,24 @@ export const openaiProvider: ServiceProvider = {
     { key: 'apiKey', label: 'API Key', type: 'password', required: true, placeholder: 'sk-...' },
   ],
   collectors: [
-    { id: 'credit_balance', name: 'Credit Balance', metricType: 'currency', unit: 'USD', refreshInterval: 300 },
-    { id: 'monthly_usage', name: 'Monthly Usage', metricType: 'currency', unit: 'USD', refreshInterval: 300 },
+    {
+      id: 'credit_balance',
+      name: 'Credit Balance',
+      metricType: 'currency', unit: 'USD', refreshInterval: 300,
+      description: 'Remaining prepaid OpenAI credits',
+      displayHint: 'currency',
+      thresholds: { warning: 5, critical: 1, direction: 'below' },
+      trend: true,
+    },
+    {
+      id: 'monthly_usage',
+      name: 'Monthly Usage',
+      metricType: 'currency', unit: 'USD', refreshInterval: 300,
+      description: 'Total spend this calendar month',
+      displayHint: 'currency',
+      thresholds: { warning: 40, critical: 50, direction: 'above' },
+      trend: true,
+    },
   ],
   alerts: [
     { id: 'low-credits', name: 'Low Credits', collectorId: 'credit_balance', condition: 'lt', defaultThreshold: 5, message: 'OpenAI credits below $5' },

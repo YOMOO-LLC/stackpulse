@@ -10,7 +10,15 @@ export const stripeProvider: ServiceProvider = {
     { key: 'apiKey', label: 'Restricted API Key', type: 'password', required: true, placeholder: 'rk_live_...' },
   ],
   collectors: [
-    { id: 'account_balance', name: 'Account Balance', metricType: 'currency', unit: 'USD', refreshInterval: 300 },
+    {
+      id: 'account_balance',
+      name: 'Account Balance',
+      metricType: 'currency', unit: 'USD', refreshInterval: 300,
+      description: 'Available Stripe account balance in USD',
+      displayHint: 'currency',
+      thresholds: { warning: 100, critical: 20, direction: 'below' },
+      trend: true,
+    },
   ],
   alerts: [
     { id: 'low-balance', name: 'Low Balance', collectorId: 'account_balance', condition: 'lt', defaultThreshold: 100, message: 'Stripe balance below $100' },

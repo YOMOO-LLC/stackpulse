@@ -10,8 +10,22 @@ export const vercelProvider: ServiceProvider = {
     { key: 'token', label: 'API Token', type: 'password', required: true, placeholder: 'vercel_...' },
   ],
   collectors: [
-    { id: 'bandwidth_used', name: 'Bandwidth Used', metricType: 'count', unit: 'GB', refreshInterval: 300 },
-    { id: 'deployment_status', name: 'Deployment Status', metricType: 'status', unit: '', refreshInterval: 300 },
+    {
+      id: 'bandwidth_used',
+      name: 'Bandwidth Used',
+      metricType: 'count', unit: 'GB', refreshInterval: 300,
+      description: 'Bandwidth consumed this billing period',
+      displayHint: 'progress',
+      thresholds: { warning: 80, critical: 95, direction: 'above', max: 100 },
+      trend: true,
+    },
+    {
+      id: 'deployment_status',
+      name: 'Deployment Status',
+      metricType: 'status', unit: '', refreshInterval: 300,
+      description: 'State of the most recent deployment',
+      displayHint: 'status-badge',
+    },
   ],
   alerts: [
     { id: 'high-bandwidth', name: 'High Bandwidth', collectorId: 'bandwidth_used', condition: 'gt', defaultThreshold: 80, message: 'Bandwidth > 80 GB' },
