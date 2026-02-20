@@ -32,6 +32,7 @@ function makeValidProvider(overrides: Partial<ServiceProvider> = {}): ServicePro
         message: 'Credits below {threshold}',
       },
     ],
+    fetchMetrics: async () => [],
     ...overrides,
   }
 }

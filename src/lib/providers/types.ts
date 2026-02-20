@@ -62,7 +62,7 @@ export interface ServiceProvider {
   credentials: Credentials[]
   collectors: Collector[]
   alerts: AlertTemplate[]
-  fetchMetrics?: (credentials: Record<string, string>) => Promise<SnapshotResult[]>
+  fetchMetrics: (credentials: Record<string, string>) => Promise<SnapshotResult[]>
   metricsLayout?: 'cards' | 'stats-grid'
 }
 
