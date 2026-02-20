@@ -48,7 +48,8 @@ Next.js App Router with source under `src/`:
 - `channels/`, `channels/test/` — Notification channel CRUD and test send
 
 ### Key Libraries
-- `src/lib/providers/` — Provider definitions, metric fetch functions, registry
+- `src/lib/providers/` — Provider definitions, self-contained `fetchMetrics`, registry
+- `src/lib/providers/ui/` — Optional per-provider custom UI components (lazy-loaded)
 - `src/lib/oauth/` — OAuth2 state/CSRF, token exchange, token refresh
 - `src/lib/alerts/engine.ts` — Alert condition evaluation (lt/gt/eq/status_is)
 - `src/lib/crypto.ts` — AES-256-GCM encrypt/decrypt for stored credentials
@@ -74,11 +75,16 @@ Supported providers and their `authType`:
 | Upstash Redis | `api_key` | daily_commands, memory_usage |
 | Upstash QStash | `api_key` | messages_delivered, messages_failed, monthly_quota_used |
 
-Adding a new provider requires:
-1. `src/lib/providers/<name>.ts` — `ServiceProvider` definition + fetch function
-2. `src/lib/providers/index.ts` — register it
-3. `src/lib/providers/fetch.ts` — add a case in `fetchProviderMetrics()`
-4. If OAuth2: add config in `src/lib/oauth/config.ts`
+Adding a new provider requires **2 files** (3 if OAuth2) — see `README.md` for the full protocol:
+
+1. `src/lib/providers/<name>.ts` — `ServiceProvider` object with `fetchMetrics` self-contained inside it (no changes to `fetch.ts` needed)
+2. `src/lib/providers/index.ts` — one import + one `registerProvider()` call
+3. If OAuth2: `src/lib/oauth/config.ts` — add OAuth config
+4. Optional: `src/lib/providers/ui/<name>.tsx` — custom UI slot for the service detail page; register the ID in `src/lib/providers/ui/registry.ts`
+
+`fetch.ts` is now a 3-line auto-dispatcher — it calls `provider.fetchMetrics(credentials)` via the registry. **Never add a switch case to it.**
+
+Collector display metadata (`displayHint`, `thresholds`, `description`, `trend`) drives the generic `MetricSection` UI automatically — use these before reaching for a custom UI component.
 
 ## OAuth2 Flow
 
@@ -120,7 +126,9 @@ Dark-first design system. CSS variables defined in `src/app/globals.css` via Tai
 
 Use `bg-background`, `text-foreground`, `bg-card`, `text-primary` in components.
 
-## TDD Workflow
+## TDD Workflow (MANDATORY)
+
+> **CRITICAL: This project uses strict Test-Driven Development. You MUST follow TDD for every feature, bug fix, or code change — no exceptions.**
 
 Test framework: **Vitest** + `@testing-library/react`
 
@@ -131,13 +139,20 @@ npx vitest run src/path/to/file.test.ts  # Single file
 npx vitest --coverage   # Coverage report
 ```
 
-**Red-Green-Refactor** (required for all features and bug fixes):
+### Red-Green-Refactor Cycle (required for ALL changes)
 
-1. **Red** — Write a failing test that describes the expected behavior
-2. **Green** — Write the minimum implementation to make the test pass
-3. **Refactor** — Clean up under green tests
+1. **Red** — Write a failing test that describes the expected behavior. Run it and confirm it fails.
+2. **Green** — Write the *minimum* implementation to make the test pass. Run tests, confirm green.
+3. **Refactor** — Clean up code while keeping all tests green.
 
-Never write implementation code without a corresponding failing test first.
+### Non-Negotiable Rules
+
+- **NEVER write implementation code before writing a failing test first.**
+- **NEVER skip writing tests, even for "simple" changes.**
+- **NEVER mark a task complete if tests are failing.**
+- Every new function, component, API route, or utility MUST have a corresponding test file.
+- Test files live alongside source files: `foo.ts` → `foo.test.ts` (or in `__tests__/` subdirectory).
+- Run `npx vitest run` before claiming any work is done to verify all tests pass.
 
 ## Environment Variables
 
