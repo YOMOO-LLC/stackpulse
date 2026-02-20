@@ -17,6 +17,10 @@ export const openrouterProvider: ServiceProvider = {
       unit: 'USD',
       refreshInterval: 300,
       endpoint: '/api/v1/auth/key',
+      displayHint: 'currency',
+      thresholds: { warning: 2, critical: 0.5, direction: 'below' },
+      description: 'Remaining OpenRouter API credits',
+      trend: true,
     },
   ],
   alerts: [

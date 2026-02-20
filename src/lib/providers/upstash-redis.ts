@@ -12,8 +12,8 @@ export const upstashRedisProvider: ServiceProvider = {
     { key: 'databaseId', label: 'Database ID', type: 'text', required: true, placeholder: 'xxxxxxxx-xxxx-...' },
   ],
   collectors: [
-    { id: 'daily_commands', name: 'Daily Commands', metricType: 'count', unit: 'commands', refreshInterval: 300 },
-    { id: 'memory_usage', name: 'Memory Usage', metricType: 'percentage', unit: '%', refreshInterval: 300 },
+    { id: 'daily_commands', name: 'Daily Commands', metricType: 'count', unit: 'commands', refreshInterval: 300, description: 'Redis commands executed today', trend: true },
+    { id: 'memory_usage', name: 'Memory Usage', metricType: 'percentage', unit: '%', refreshInterval: 300, displayHint: 'progress', thresholds: { warning: 70, critical: 85, direction: 'above', max: 100 }, description: 'Memory in use %', trend: true },
   ],
   alerts: [
     { id: 'high-memory', name: 'High Memory', collectorId: 'memory_usage', condition: 'gt', defaultThreshold: 80, message: 'Redis memory > 80%' },

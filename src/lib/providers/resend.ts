@@ -17,6 +17,8 @@ export const resendProvider: ServiceProvider = {
       unit: '',
       refreshInterval: 300,
       endpoint: '/domains',
+      displayHint: 'status-badge',
+      description: 'Resend API connection status',
     },
   ],
   alerts: [

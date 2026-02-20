@@ -10,9 +10,9 @@ export const upstashQStashProvider: ServiceProvider = {
     { key: 'token', label: 'QStash Token', type: 'password', required: true, placeholder: 'qstash_...' },
   ],
   collectors: [
-    { id: 'messages_delivered', name: 'Messages Delivered', metricType: 'count', unit: 'messages', refreshInterval: 300 },
-    { id: 'messages_failed', name: 'Messages Failed', metricType: 'count', unit: 'messages', refreshInterval: 300 },
-    { id: 'monthly_quota_used', name: 'Quota Used', metricType: 'percentage', unit: '%', refreshInterval: 300 },
+    { id: 'messages_delivered', name: 'Messages Delivered', metricType: 'count', unit: 'messages', refreshInterval: 300, description: 'Messages delivered this month', trend: true },
+    { id: 'messages_failed', name: 'Messages Failed', metricType: 'count', unit: 'messages', refreshInterval: 300, thresholds: { warning: 5, critical: 20, direction: 'above' }, description: 'Failed deliveries this month', trend: true },
+    { id: 'monthly_quota_used', name: 'Quota Used', metricType: 'percentage', unit: '%', refreshInterval: 300, displayHint: 'progress', thresholds: { warning: 70, critical: 90, direction: 'above', max: 100 }, description: 'Monthly quota consumed %' },
   ],
   alerts: [
     { id: 'high-quota', name: 'High Quota', collectorId: 'monthly_quota_used', condition: 'gt', defaultThreshold: 80, message: 'QStash quota > 80%' },
