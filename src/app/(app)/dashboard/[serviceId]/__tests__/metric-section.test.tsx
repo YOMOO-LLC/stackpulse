@@ -3,7 +3,6 @@ import { render, screen } from '@testing-library/react'
 import { MetricSection } from '../metric-section'
 import type { Collector } from '@/lib/providers/types'
 
-// Mock Supabase client for realtime subscriptions
 vi.mock('@/lib/supabase/client', () => ({
   createClient: () => ({
     channel: () => ({
@@ -12,22 +11,6 @@ vi.mock('@/lib/supabase/client', () => ({
     }),
     removeChannel: () => {},
   }),
-}))
-
-// Mock recharts to avoid SSR issues in tests
-vi.mock('recharts', () => ({
-  ResponsiveContainer: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  AreaChart: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  BarChart: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  Area: () => null,
-  Bar: () => null,
-  XAxis: () => null,
-  YAxis: () => null,
-  Tooltip: () => null,
-  ReferenceLine: () => null,
-  defs: () => null,
-  linearGradient: () => null,
-  stop: () => null,
 }))
 
 const mockCollectors: Collector[] = [
@@ -46,12 +29,56 @@ const mockSnapshots = [
   { collector_id: 'credit_balance', value: 6.50, value_text: null, unit: 'USD', status: 'healthy', fetched_at: new Date(Date.now() - 3600000).toISOString() },
 ]
 
-describe('MetricSection', () => {
-  it('renders section heading', () => {
-    render(<MetricSection serviceId="svc-1" collectors={mockCollectors} snapshots={mockSnapshots} />)
-    expect(screen.getByText('METRICS')).toBeTruthy()
+const makeSnap = (collector_id: string, value: number) => ({
+  collector_id, value, value_text: null, unit: 'req', status: 'healthy',
+  fetched_at: new Date().toISOString(),
+})
+
+describe('MetricSection — displayHint', () => {
+  it('renders a progressbar when displayHint is progress', () => {
+    const collectors: Collector[] = [{
+      id: 'rate_limit', name: 'Rate Limit', metricType: 'count' as const,
+      unit: 'req', refreshInterval: 300,
+      displayHint: 'progress' as const,
+      thresholds: { warning: 1000, critical: 100, direction: 'below' as const, max: 5000 },
+    }]
+    render(
+      <MetricSection serviceId="s1" collectors={collectors}
+        snapshots={[makeSnap('rate_limit', 800)]} />
+    )
+    expect(screen.getByRole('progressbar')).toBeTruthy()
   })
 
+  it('marks value as critical when below critical threshold (direction: below)', () => {
+    const collectors: Collector[] = [{
+      id: 'balance', name: 'Balance', metricType: 'currency' as const,
+      unit: 'USD', refreshInterval: 300,
+      displayHint: 'currency' as const,
+      thresholds: { warning: 100, critical: 20, direction: 'below' as const },
+    }]
+    const { container } = render(
+      <MetricSection serviceId="s1" collectors={collectors}
+        snapshots={[makeSnap('balance', 15)]} />
+    )
+    expect(container.querySelector('[data-health="critical"]')).not.toBeNull()
+  })
+
+  it('marks value as warning when above warning threshold (direction: above)', () => {
+    const collectors: Collector[] = [{
+      id: 'memory', name: 'Memory', metricType: 'percentage' as const,
+      unit: '%', refreshInterval: 300,
+      displayHint: 'progress' as const,
+      thresholds: { warning: 70, critical: 85, direction: 'above' as const, max: 100 },
+    }]
+    const { container } = render(
+      <MetricSection serviceId="s1" collectors={collectors}
+        snapshots={[makeSnap('memory', 75)]} />
+    )
+    expect(container.querySelector('[data-health="warning"]')).not.toBeNull()
+  })
+})
+
+describe('MetricSection', () => {
   it('renders a card for each collector', () => {
     render(<MetricSection serviceId="svc-1" collectors={mockCollectors} snapshots={mockSnapshots} />)
     expect(screen.getByText('Credit Balance')).toBeTruthy()
@@ -62,8 +89,8 @@ describe('MetricSection', () => {
     expect(screen.getByText('$7.93')).toBeTruthy()
   })
 
-  it('shows empty state when no collectors', () => {
-    render(<MetricSection serviceId="svc-1" collectors={[]} snapshots={[]} />)
-    expect(screen.getByText(/no metrics/i)).toBeTruthy()
+  it('renders nothing when no collectors', () => {
+    const { container } = render(<MetricSection serviceId="svc-1" collectors={[]} snapshots={[]} />)
+    expect(container.firstChild).toBeNull()
   })
 })

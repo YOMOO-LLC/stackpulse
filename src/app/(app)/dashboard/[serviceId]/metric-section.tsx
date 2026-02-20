@@ -1,9 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import type { Collector } from '@/lib/providers/types'
-import { StatusDot } from '@/components/status-dot'
-import { MetricChart } from './metric-chart'
+import type { Collector, CollectorThresholds } from '@/lib/providers/types'
 import { createClient } from '@/lib/supabase/client'
 
 interface Snapshot {
@@ -21,30 +19,42 @@ interface MetricSectionProps {
   snapshots: Snapshot[]
 }
 
-function formatLatestValue(value: number | null, valueText: string | null, metricType: string, unit: string | null): string {
+function formatValue(value: number | null, valueText: string | null, metricType: string): string {
   if (value !== null) {
     if (metricType === 'currency') return `$${value.toFixed(2)}`
     if (metricType === 'percentage') return `${value.toFixed(1)}%`
-    return `${value}${unit ? ' ' + unit : ''}`
+    if (value >= 1000) return value.toLocaleString()
+    return String(value)
   }
-  return valueText ?? '\u2014'
+  return valueText ?? '—'
 }
 
-function timeAgo(iso: string): string {
-  const diffMs = Date.now() - new Date(iso).getTime()
-  const diffMins = Math.floor(diffMs / 60000)
-  if (diffMins < 1) return 'just now'
-  if (diffMins < 60) return `${diffMins} minute${diffMins !== 1 ? 's' : ''} ago`
-  const diffHrs = Math.floor(diffMins / 60)
-  return `${diffHrs} hour${diffHrs !== 1 ? 's' : ''} ago`
+function computeHealth(
+  value: number,
+  thresholds: CollectorThresholds | undefined
+): 'healthy' | 'warning' | 'critical' {
+  if (!thresholds) return 'healthy'
+  const { warning, critical, direction } = thresholds
+  if (direction === 'below') {
+    if (value <= critical) return 'critical'
+    if (value <= warning) return 'warning'
+  } else {
+    if (value >= critical) return 'critical'
+    if (value >= warning) return 'warning'
+  }
+  return 'healthy'
+}
+
+const HEALTH_COLOR: Record<string, string> = {
+  healthy:  'var(--sp-success)',
+  warning:  'var(--sp-warning)',
+  critical: 'var(--sp-error)',
 }
 
 export function MetricSection({ serviceId, collectors, snapshots }: MetricSectionProps) {
   const [liveSnapshots, setLiveSnapshots] = useState<Snapshot[]>(snapshots)
 
-  useEffect(() => {
-    setLiveSnapshots(snapshots)
-  }, [snapshots])
+  useEffect(() => { setLiveSnapshots(snapshots) }, [snapshots])
 
   useEffect(() => {
     const supabase = createClient()
@@ -57,69 +67,75 @@ export function MetricSection({ serviceId, collectors, snapshots }: MetricSectio
         filter: `connected_service_id=eq.${serviceId}`,
       }, (payload) => {
         const row = payload.new as Record<string, unknown>
-        const snap: Snapshot = {
+        setLiveSnapshots((prev) => [...prev, {
           collector_id: row.collector_id as string,
           value: row.value != null ? Number(row.value) : null,
           value_text: (row.value_text as string) ?? null,
           unit: (row.unit as string) ?? null,
           status: row.status as string,
           fetched_at: row.fetched_at as string,
-        }
-        setLiveSnapshots((prev) => [...prev, snap])
+        }])
       })
       .subscribe()
-
     return () => { supabase.removeChannel(channel) }
   }, [serviceId])
 
-  if (collectors.length === 0) {
-    return (
-      <section className="mb-8">
-        <h2 className="text-xs font-semibold tracking-widest text-muted-foreground mb-3">METRICS</h2>
-        <p className="text-sm text-muted-foreground">No metrics configured for this provider.</p>
-      </section>
-    )
-  }
-
-  const useGrid = collectors.length >= 3
-  const chartHeight = useGrid ? 120 : 160
+  if (collectors.length === 0) return null
 
   return (
-    <section className="mb-8">
-      <h2 className="text-xs font-semibold tracking-widest text-muted-foreground mb-3">METRICS</h2>
-      <div className={useGrid ? 'grid grid-cols-1 sm:grid-cols-2 gap-4' : 'space-y-4'}>
-        {collectors.map((collector) => {
-          const collectorSnaps = liveSnapshots
-            .filter((s) => s.collector_id === collector.id)
-            .sort((a, b) => new Date(a.fetched_at).getTime() - new Date(b.fetched_at).getTime())
+    <div className="flex gap-3.5 flex-wrap">
+      {collectors.map((collector) => {
+        const collectorSnaps = liveSnapshots
+          .filter((s) => s.collector_id === collector.id)
+          .sort((a, b) => new Date(a.fetched_at).getTime() - new Date(b.fetched_at).getTime())
+        const latest = collectorSnaps.at(-1)
+        const value = latest?.value ?? null
+        const health = value != null ? computeHealth(value, collector.thresholds) : 'healthy'
+        const valueColor = collector.thresholds ? HEALTH_COLOR[health] : 'var(--foreground)'
 
-          const latest = collectorSnaps.at(-1)
-          const status = (latest?.status ?? 'unknown') as 'healthy' | 'warning' | 'critical' | 'unknown'
-
-          return (
-            <div key={collector.id} className="bg-card border border-border rounded-lg p-4">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-medium text-foreground">{collector.name}</span>
-                <StatusDot status={status} showLabel />
+        return (
+          <div
+            key={collector.id}
+            className="flex flex-col gap-2 rounded-xl flex-1 min-w-[160px]"
+            style={{
+              padding: '18px',
+              background: 'var(--card)',
+              border: '1px solid var(--border)',
+            }}
+          >
+            <p className="text-xs font-medium" style={{ color: 'var(--muted-foreground)' }}>
+              {collector.name}
+            </p>
+            <p
+              className="font-bold leading-none"
+              data-health={health}
+              style={{ fontSize: '26px', letterSpacing: '-1px', color: valueColor }}
+            >
+              {formatValue(value, latest?.value_text ?? null, collector.metricType)}
+            </p>
+            {collector.displayHint === 'progress' && collector.thresholds?.max && value != null && (
+              <div
+                role="progressbar"
+                aria-valuenow={value}
+                aria-valuemax={collector.thresholds.max}
+                style={{ height: 4, borderRadius: 2, background: 'var(--border)', overflow: 'hidden', marginTop: 4 }}
+              >
+                <div style={{
+                  height: '100%',
+                  width: `${Math.min(100, (value / collector.thresholds.max) * 100)}%`,
+                  background: HEALTH_COLOR[health],
+                  transition: 'width 0.3s ease',
+                }} />
               </div>
-              <div className="text-2xl font-semibold text-foreground mb-3">
-                {formatLatestValue(latest?.value ?? null, latest?.value_text ?? null, collector.metricType, collector.unit)}
-              </div>
-              <MetricChart
-                metricType={collector.metricType}
-                snapshots={collectorSnaps}
-                unit={collector.unit}
-                height={chartHeight}
-              />
-              {latest && (
-                <p className="text-xs text-muted-foreground mt-2">
-                  Last updated {timeAgo(latest.fetched_at)}
-                </p>
-              )}
-            </div>
-          )
-        })}
-      </div>
-    </section>
+            )}
+            {latest?.unit && (
+              <p className="text-[11px]" style={{ color: 'var(--sp-text-tertiary)' }}>
+                {latest.unit}
+              </p>
+            )}
+          </div>
+        )
+      })}
+    </div>
   )
 }
