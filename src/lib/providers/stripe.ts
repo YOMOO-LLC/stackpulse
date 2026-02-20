@@ -15,6 +15,10 @@ export const stripeProvider: ServiceProvider = {
   alerts: [
     { id: 'low-balance', name: 'Low Balance', collectorId: 'account_balance', condition: 'lt', defaultThreshold: 100, message: 'Stripe balance below $100' },
   ],
+  fetchMetrics: async (credentials) => {
+    const r = await fetchStripeMetrics(credentials.apiKey)
+    return [{ collectorId: 'account_balance', value: r.balance ?? null, valueText: null, unit: 'USD', status: r.status }]
+  },
 }
 
 export interface StripeMetricResult {

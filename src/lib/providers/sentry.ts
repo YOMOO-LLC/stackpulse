@@ -27,6 +27,12 @@ export const sentryProvider: ServiceProvider = {
       message: 'Sentry errors exceed {threshold} this month',
     },
   ],
+  fetchMetrics: async (credentials) => {
+    const token = credentials.access_token ?? credentials.authToken
+    const orgSlug = credentials.orgSlug ?? ''
+    const r = await fetchSentryMetrics(token, orgSlug)
+    return [{ collectorId: 'error_count', value: r.value ?? null, valueText: null, unit: 'events', status: r.status }]
+  },
 }
 
 export interface SentryMetricResult {

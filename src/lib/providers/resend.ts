@@ -29,6 +29,10 @@ export const resendProvider: ServiceProvider = {
       message: 'Resend API key is invalid or expired',
     },
   ],
+  fetchMetrics: async (credentials) => {
+    const r = await fetchResendMetrics(credentials.apiKey)
+    return [{ collectorId: 'connection_status', value: null, valueText: r.value ?? null, unit: '', status: r.status }]
+  },
 }
 
 export interface ResendMetricResult {

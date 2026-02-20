@@ -29,6 +29,10 @@ export const openrouterProvider: ServiceProvider = {
       message: 'OpenRouter credits below ${threshold}',
     },
   ],
+  fetchMetrics: async (credentials) => {
+    const r = await fetchOpenRouterMetrics(credentials.apiKey)
+    return [{ collectorId: 'credit_balance', value: r.value ?? null, valueText: null, unit: 'USD', status: r.status }]
+  },
 }
 
 export interface MetricResult {
