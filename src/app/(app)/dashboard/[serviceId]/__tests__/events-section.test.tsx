@@ -1,47 +1,35 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
-import { EventsSection } from '../events-section'
+import { describe, it, expect } from 'vitest'
+import { render, screen } from '@testing-library/react'
+import { RecentSnapshotsPanel } from '../events-section'
+import type { Collector } from '@/lib/providers/types'
 
-global.fetch = vi.fn()
-
-const mockEvents = [
-  {
-    id: 'evt-1',
-    notified_at: '2026-02-17T14:32:00Z',
-    triggered_value_numeric: 4.20,
-    triggered_value_text: null,
-    alert_configs: { collector_id: 'credit_balance', condition: 'lt', threshold_numeric: 5 },
-  },
+const mockCollectors: Collector[] = [
+  { id: 'rate_limit_remaining', name: 'Rate Limit Remaining', metricType: 'count', unit: 'requests', refreshInterval: 300, endpoint: '' },
 ]
 
-describe('EventsSection', () => {
-  beforeEach(() => {
-    vi.mocked(global.fetch).mockResolvedValue({
-      ok: true,
-      json: async () => ({ events: mockEvents, hasMore: false }),
-    } as Response)
-  })
+const mockSnapshots = [
+  { collector_id: 'rate_limit_remaining', value: 4892, value_text: null, unit: null, status: 'healthy', fetched_at: new Date().toISOString() },
+  { collector_id: 'rate_limit_remaining', value: 4910, value_text: null, unit: null, status: 'healthy', fetched_at: new Date(Date.now() - 900000).toISOString() },
+]
 
+describe('RecentSnapshotsPanel', () => {
   it('renders section heading', () => {
-    render(<EventsSection serviceId="svc-1" />)
-    expect(screen.getByText('RECENT EVENTS')).toBeTruthy()
+    render(<RecentSnapshotsPanel snapshots={mockSnapshots} collectors={mockCollectors} />)
+    expect(screen.getByText('Recent Metric Snapshots')).toBeTruthy()
   })
 
-  it('shows events after loading', async () => {
-    render(<EventsSection serviceId="svc-1" />)
-    await waitFor(() => {
-      expect(screen.getByText('$4.20')).toBeTruthy()
-    })
+  it('shows snapshot values', () => {
+    render(<RecentSnapshotsPanel snapshots={mockSnapshots} collectors={mockCollectors} />)
+    expect(screen.getByText('4,892')).toBeTruthy()
   })
 
-  it('shows empty state when no events', async () => {
-    vi.mocked(global.fetch).mockResolvedValue({
-      ok: true,
-      json: async () => ({ events: [], hasMore: false }),
-    } as Response)
-    render(<EventsSection serviceId="svc-1" />)
-    await waitFor(() => {
-      expect(screen.getByText(/no alerts have triggered/i)).toBeTruthy()
-    })
+  it('shows collector names', () => {
+    render(<RecentSnapshotsPanel snapshots={mockSnapshots} collectors={mockCollectors} />)
+    expect(screen.getAllByText('Rate Limit Remaining').length).toBeGreaterThan(0)
+  })
+
+  it('shows empty state when no snapshots', () => {
+    render(<RecentSnapshotsPanel snapshots={[]} collectors={[]} />)
+    expect(screen.getByText(/no metric data/i)).toBeTruthy()
   })
 })

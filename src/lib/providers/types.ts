@@ -1,8 +1,9 @@
+import type { SnapshotResult } from './fetch'
+
 export type MetricType = 'currency' | 'percentage' | 'count' | 'status' | 'boolean'
-
 export type Category = 'ai' | 'monitoring' | 'email' | 'hosting' | 'payment' | 'infrastructure' | 'other'
-
 export type AlertCondition = 'lt' | 'gt' | 'eq' | 'status_is'
+export type DisplayHint = 'number' | 'progress' | 'status-badge' | 'currency'
 
 export interface MetricValue {
   collectorId: string
@@ -18,6 +19,13 @@ export interface Credentials {
   placeholder?: string
 }
 
+export interface CollectorThresholds {
+  warning: number
+  critical: number
+  direction: 'below' | 'above'
+  max?: number
+}
+
 export interface Collector {
   id: string
   name: string
@@ -25,24 +33,15 @@ export interface Collector {
   unit: string
   refreshInterval: number
   endpoint?: string
+  description?: string
+  displayHint?: DisplayHint
+  thresholds?: CollectorThresholds
+  trend?: boolean
 }
 
-export interface ApiKeyAuth {
-  type: 'api_key'
-}
-
-export interface OAuth2Auth {
-  type: 'oauth2'
-  authorizationUrl: string
-  tokenUrl: string
-  scopes: string[]
-}
-
-export interface HybridAuth {
-  type: 'hybrid'
-  oauth2: Omit<OAuth2Auth, 'type'>
-}
-
+export interface ApiKeyAuth { type: 'api_key' }
+export interface OAuth2Auth { type: 'oauth2'; authorizationUrl: string; tokenUrl: string; scopes: string[] }
+export interface HybridAuth { type: 'hybrid'; oauth2: Omit<OAuth2Auth, 'type'> }
 export type AuthConfig = ApiKeyAuth | OAuth2Auth | HybridAuth
 
 export interface AlertTemplate {
@@ -63,10 +62,10 @@ export interface ServiceProvider {
   credentials: Credentials[]
   collectors: Collector[]
   alerts: AlertTemplate[]
+  fetchMetrics?: (credentials: Record<string, string>) => Promise<SnapshotResult[]>
+  metricsLayout?: 'cards' | 'stats-grid'
 }
 
 export const VALID_METRIC_TYPES: MetricType[] = ['currency', 'percentage', 'count', 'status', 'boolean']
-
 export const VALID_CATEGORIES: Category[] = ['ai', 'monitoring', 'email', 'hosting', 'payment', 'infrastructure', 'other']
-
 export const VALID_ALERT_CONDITIONS: AlertCondition[] = ['lt', 'gt', 'eq', 'status_is']
