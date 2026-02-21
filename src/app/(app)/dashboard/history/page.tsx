@@ -10,7 +10,6 @@ function formatDate(iso: string): string {
 
 interface AlertConfig {
   id: string
-  name?: string
   collector_id: string
   condition: string
   threshold_numeric: number | null
@@ -43,7 +42,7 @@ export default async function HistoryPage() {
   const { data: configs } = serviceIds.length > 0
     ? await supabase
         .from('alert_configs')
-        .select('id, name, collector_id, condition, threshold_numeric, connected_service_id, connected_services(provider_id, label)')
+        .select('id, collector_id, condition, threshold_numeric, connected_service_id, connected_services(provider_id, label)')
         .in('connected_service_id', serviceIds)
     : { data: [] }
 

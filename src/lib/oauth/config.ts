@@ -43,6 +43,15 @@ export function getOAuthConfig(providerId: string): OAuthProviderConfig | null {
       redirectUri: `${appUrl}/api/oauth/callback/sentry`,
       supportsRefresh: true,
     },
+    supabase: {
+      clientId: process.env.SUPABASE_CLIENT_ID ?? '',
+      clientSecret: process.env.SUPABASE_CLIENT_SECRET ?? '',
+      authorizationUrl: 'https://api.supabase.com/v1/oauth/authorize',
+      tokenUrl: 'https://api.supabase.com/v1/oauth/token',
+      scopes: [],
+      redirectUri: `${appUrl}/api/oauth/callback/supabase`,
+      supportsRefresh: true,
+    },
   }
 
   return configs[providerId] ?? null

@@ -1,109 +1,100 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { AlertTriangle, XCircle } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import type { Collector } from '@/lib/providers/types'
 
-interface AlertEvent {
-  id: string
-  notified_at: string
-  triggered_value_numeric: number | null
-  triggered_value_text: string | null
-  alert_configs: {
-    collector_id: string
-    condition: string
-    threshold_numeric: number | null
-  } | null
+interface Snapshot {
+  collector_id: string
+  value: number | null
+  value_text: string | null
+  unit: string | null
+  status: string
+  fetched_at: string
 }
 
-interface EventsSectionProps {
-  serviceId: string
+interface RecentSnapshotsPanelProps {
+  snapshots: Snapshot[]
+  collectors: Collector[]
 }
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-US', {
-    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false,
-  })
+function timeAgo(iso: string): string {
+  const diffMs = Date.now() - new Date(iso).getTime()
+  const diffMins = Math.floor(diffMs / 60000)
+  if (diffMins < 1) return 'just now'
+  if (diffMins < 60) return `${diffMins}m ago`
+  const diffHrs = Math.floor(diffMins / 60)
+  return `${diffHrs}h ago`
 }
 
-function formatTriggeredValue(event: AlertEvent): string {
-  if (event.triggered_value_numeric != null) {
-    const threshold = event.alert_configs?.threshold_numeric
-    if (threshold != null && threshold < 1000) {
-      return `$${event.triggered_value_numeric.toFixed(2)}`
-    }
-    return String(event.triggered_value_numeric)
+function formatValue(value: number | null, valueText: string | null): string {
+  if (value !== null) {
+    if (value >= 1000) return value.toLocaleString()
+    return String(value)
   }
-  return event.triggered_value_text ?? ''
+  return valueText ?? '—'
 }
 
-export function EventsSection({ serviceId }: EventsSectionProps) {
-  const [events, setEvents] = useState<AlertEvent[]>([])
-  const [hasMore, setHasMore] = useState(false)
-  const [offset, setOffset] = useState(0)
-  const [loading, setLoading] = useState(true)
+function dotColor(status: string): string {
+  if (status === 'healthy') return 'var(--sp-success)'
+  if (status === 'warning') return 'var(--sp-warning)'
+  if (status === 'critical') return 'var(--sp-error)'
+  return 'var(--muted-foreground)'
+}
 
-  async function loadEvents(currentOffset: number) {
-    setLoading(true)
-    const res = await fetch(`/api/alert-events?serviceId=${serviceId}&offset=${currentOffset}`)
-    if (res.ok) {
-      const json = await res.json()
-      if (currentOffset === 0) {
-        setEvents(json.events)
-      } else {
-        setEvents((prev) => [...prev, ...json.events])
-      }
-      setHasMore(json.hasMore)
-    }
-    setLoading(false)
-  }
-
-  useEffect(() => { loadEvents(0) }, [serviceId])
-
-  function loadMore() {
-    const newOffset = offset + 20
-    setOffset(newOffset)
-    loadEvents(newOffset)
-  }
+export function RecentSnapshotsPanel({ snapshots, collectors }: RecentSnapshotsPanelProps) {
+  const recent = [...snapshots]
+    .sort((a, b) => new Date(b.fetched_at).getTime() - new Date(a.fetched_at).getTime())
+    .slice(0, 8)
 
   return (
-    <section>
-      <h2 className="text-xs font-semibold tracking-widest text-muted-foreground mb-3">RECENT EVENTS</h2>
+    <div className="rounded-xl overflow-hidden" style={{ background: 'var(--card)', border: '1px solid var(--border)' }}>
 
-      {!loading && events.length === 0 && (
-        <p className="text-sm text-muted-foreground">No alerts have triggered for this service.</p>
-      )}
-
-      <div className="space-y-1">
-        {events.map((event) => {
-          const isCritical = event.alert_configs?.condition === 'gt'
-          return (
-            <div key={event.id} className="flex items-center gap-3 py-2 border-b border-border/50 last:border-0">
-              {isCritical
-                ? <XCircle className="h-4 w-4 text-red-500 shrink-0" />
-                : <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
-              }
-              <span className="text-xs text-muted-foreground shrink-0 w-36">
-                {formatDate(event.notified_at)}
-              </span>
-              <span className="text-sm text-foreground flex-1">
-                {event.alert_configs?.collector_id?.replace(/_/g, ' ') ?? 'Unknown'} triggered
-              </span>
-              <span className="text-sm font-medium text-foreground">
-                {formatTriggeredValue(event)}
-              </span>
-            </div>
-          )
-        })}
+      {/* Header */}
+      <div className="px-4 py-3.5" style={{ borderBottom: '1px solid var(--border)' }}>
+        <h2 className="text-[15px] font-semibold" style={{ color: 'var(--foreground)' }}>
+          Recent Metric Snapshots
+        </h2>
       </div>
 
-      {hasMore && (
-        <div className="mt-3 flex justify-end">
-          <Button variant="ghost" size="sm" onClick={loadMore} disabled={loading}>
-            {loading ? 'Loading\u2026' : 'Load more'}
-          </Button>
+      {/* Snapshot rows */}
+      {recent.length === 0 ? (
+        <div className="px-4 py-8 text-center">
+          <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
+            No metric data yet.
+          </p>
+        </div>
+      ) : (
+        <div>
+          {recent.map((snap, i) => {
+            const collector = collectors.find((c) => c.id === snap.collector_id)
+            return (
+              <div
+                key={`${snap.collector_id}-${snap.fetched_at}`}
+                className="flex items-center gap-3 px-4 py-3"
+                style={{ borderTop: i > 0 ? '1px solid var(--border)' : undefined }}
+              >
+                {/* Status dot */}
+                <div
+                  className="w-2 h-2 rounded-full shrink-0"
+                  style={{ background: dotColor(snap.status) }}
+                />
+                {/* Metric name + time */}
+                <div className="flex flex-col flex-1 gap-0.5 min-w-0">
+                  <span className="text-sm truncate" style={{ color: 'var(--foreground)' }}>
+                    {collector?.name ?? snap.collector_id}
+                  </span>
+                  <span className="text-[11px]" style={{ color: 'var(--sp-text-tertiary)' }}>
+                    {timeAgo(snap.fetched_at)}
+                  </span>
+                </div>
+                {/* Value */}
+                <span className="text-sm font-semibold shrink-0" style={{ color: 'var(--foreground)' }}>
+                  {formatValue(snap.value, snap.value_text)}
+                </span>
+              </div>
+            )
+          })}
         </div>
       )}
-    </section>
+    </div>
   )
 }

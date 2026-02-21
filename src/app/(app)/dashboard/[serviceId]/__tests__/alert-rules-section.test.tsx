@@ -20,23 +20,23 @@ beforeEach(() => {
 describe('AlertRulesSection', () => {
   it('renders section heading', () => {
     render(<AlertRulesSection serviceId="svc-1" alertTemplates={mockTemplates} collectors={mockCollectors} />)
-    expect(screen.getByText('ALERT RULES')).toBeTruthy()
+    expect(screen.getByText('Alert Rules')).toBeTruthy()
   })
 
-  it('shows Add alert rule button', () => {
+  it('shows New Rule button', () => {
     render(<AlertRulesSection serviceId="svc-1" alertTemplates={mockTemplates} collectors={mockCollectors} />)
-    expect(screen.getByText(/add alert rule/i)).toBeTruthy()
+    expect(screen.getByText('New Rule')).toBeTruthy()
   })
 
-  it('shows form when Add alert rule is clicked', () => {
+  it('shows form when New Rule is clicked', () => {
     render(<AlertRulesSection serviceId="svc-1" alertTemplates={mockTemplates} collectors={mockCollectors} />)
-    fireEvent.click(screen.getByText(/add alert rule/i))
+    fireEvent.click(screen.getByText('New Rule'))
     expect(screen.getByText(/metric/i)).toBeTruthy()
   })
 
   it('shows preset buttons in form', () => {
     render(<AlertRulesSection serviceId="svc-1" alertTemplates={mockTemplates} collectors={mockCollectors} />)
-    fireEvent.click(screen.getByText(/add alert rule/i))
+    fireEvent.click(screen.getByText('New Rule'))
     expect(screen.getByText('Low Credits')).toBeTruthy()
   })
 })

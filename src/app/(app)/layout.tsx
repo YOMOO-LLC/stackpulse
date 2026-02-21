@@ -3,41 +3,42 @@ import { createClient } from '@/lib/supabase/server'
 import { AppSidebar } from '@/components/app-sidebar'
 import { AlertToastContainer } from '@/components/alert-toast'
 
-type Status = 'healthy' | 'warning' | 'critical' | 'unknown'
-
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) redirect('/login')
 
-  // Fetch services for sidebar
+  // Count recent alert events (last 24h) for sidebar badge
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
   const { data: services } = await supabase
     .from('connected_services')
-    .select(`
-      id, provider_id, label,
-      metric_snapshots ( status, fetched_at )
-    `)
+    .select('id')
     .eq('user_id', user.id)
-    .order('created_at', { ascending: true })
 
-  const sidebarServices = (services ?? []).map((s) => {
-    const snapshots = (s.metric_snapshots ?? []) as Array<{ status: string; fetched_at: string }>
-    const sortedSnaps = [...snapshots].sort(
-      (a, b) => new Date(b.fetched_at).getTime() - new Date(a.fetched_at).getTime()
-    )
-    const latestStatus = sortedSnaps[0]?.status as Status | undefined
-    return {
-      id: s.id,
-      label: s.label ?? s.provider_id,
-      providerId: s.provider_id,
-      status: (latestStatus ?? 'unknown') as Status,
+  const serviceIds = (services ?? []).map((s) => s.id)
+  let alertCount = 0
+
+  if (serviceIds.length > 0) {
+    const { data: configs } = await supabase
+      .from('alert_configs')
+      .select('id')
+      .in('connected_service_id', serviceIds)
+
+    const configIds = (configs ?? []).map((c) => c.id)
+    if (configIds.length > 0) {
+      const { count } = await supabase
+        .from('alert_events')
+        .select('id', { count: 'exact', head: true })
+        .in('alert_config_id', configIds)
+        .gte('notified_at', since)
+      alertCount = count ?? 0
     }
-  })
+  }
 
   return (
-    <div className="flex min-h-screen">
-      <AppSidebar services={sidebarServices} userEmail={user.email ?? ''} />
+    <div className="flex min-h-screen" style={{ background: 'var(--background)' }}>
+      <AppSidebar userEmail={user.email ?? ''} alertCount={alertCount} />
       <main className="flex-1 overflow-y-auto">
         {children}
       </main>

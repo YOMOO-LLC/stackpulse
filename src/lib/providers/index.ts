@@ -8,6 +8,8 @@ import { vercelProvider } from './vercel'
 import { openaiProvider } from './openai'
 import { upstashRedisProvider } from './upstash-redis'
 import { upstashQStashProvider } from './upstash-qstash'
+import { minimaxProvider } from './minimax'
+import { supabaseProvider } from './supabase'
 
 // Register all providers (executed on module load)
 registerProvider(openrouterProvider)
@@ -19,6 +21,8 @@ registerProvider(vercelProvider)
 registerProvider(openaiProvider)
 registerProvider(upstashRedisProvider)
 registerProvider(upstashQStashProvider)
+registerProvider(minimaxProvider)
+registerProvider(supabaseProvider)
 
 export { getProvider, getAllProviders, registerProvider, clearProviders } from './registry'
 export { validateProvider } from './validator'
@@ -31,4 +35,6 @@ export { vercelProvider, fetchVercelMetrics } from './vercel'
 export { openaiProvider, fetchOpenAIMetrics } from './openai'
 export { upstashRedisProvider, fetchUpstashRedisMetrics } from './upstash-redis'
 export { upstashQStashProvider, fetchUpstashQStashMetrics } from './upstash-qstash'
+export { minimaxProvider, fetchMinimaxMetrics } from './minimax'
+export { supabaseProvider, fetchSupabaseMetrics } from './supabase'
 export type { ServiceProvider, Collector, Category, MetricType, AlertTemplate, Credentials, MetricValue } from './types'

@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { Plus, Pencil, Trash2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Button } from '@/components/ui/button'
 import type { Collector, AlertTemplate } from '@/lib/providers/types'
 
 interface AlertConfig {
@@ -125,54 +125,102 @@ export function AlertRulesSection({ serviceId, alertTemplates, collectors }: Ale
   }
 
   return (
-    <section className="mb-8">
-      <h2 className="text-xs font-semibold tracking-widest text-muted-foreground mb-3">ALERT RULES</h2>
+    <div className="flex flex-col gap-3">
+      {/* Card container */}
+      <div className="rounded-xl overflow-hidden" style={{ background: 'var(--card)', border: '1px solid var(--border)' }}>
 
-      {rules.length === 0 && !showForm && (
-        <p className="text-sm text-muted-foreground mb-3">No alert rules configured.</p>
-      )}
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3.5" style={{ borderBottom: '1px solid var(--border)' }}>
+          <h2 className="text-[15px] font-semibold" style={{ color: 'var(--foreground)' }}>
+            Alert Rules
+          </h2>
+          <button
+            onClick={() => setShowForm(true)}
+            className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg"
+            style={{ background: 'var(--primary)', color: 'var(--primary-foreground)' }}
+          >
+            <Plus className="h-3.5 w-3.5" />
+            New Rule
+          </button>
+        </div>
 
-      <div className="space-y-2 mb-3">
-        {rules.map((rule) => {
-          const collector = collectors.find((c) => c.id === rule.collector_id)
-          const threshold = rule.threshold_numeric != null
-            ? (collector?.metricType === 'currency' ? `$${rule.threshold_numeric}` : String(rule.threshold_numeric))
-            : rule.threshold_text ?? ''
+        {/* Rules list */}
+        {rules.length === 0 && !showForm ? (
+          <div className="px-4 py-8 text-center">
+            <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
+              No alert rules configured.
+            </p>
+          </div>
+        ) : (
+          <div>
+            {rules.map((rule, i) => {
+              const collector = collectors.find((c) => c.id === rule.collector_id)
+              const threshold = rule.threshold_numeric != null
+                ? (collector?.metricType === 'currency' ? `$${rule.threshold_numeric}` : String(rule.threshold_numeric))
+                : rule.threshold_text ?? ''
 
-          return (
-            <div key={rule.id} className="flex items-center gap-3 bg-card border border-border rounded-lg px-4 py-2.5">
-              <button
-                onClick={() => toggleEnabled(rule)}
-                className={`w-3.5 h-3.5 rounded-full border-2 shrink-0 transition-colors ${rule.enabled ? 'bg-emerald-500 border-emerald-500' : 'border-muted-foreground'}`}
-                title={rule.enabled ? 'Enabled' : 'Disabled'}
-              />
-              <span className="text-sm text-foreground flex-1">
-                {collector?.name ?? rule.collector_id}{' '}
-                <span className="text-muted-foreground">{CONDITION_LABELS[rule.condition] ?? rule.condition}</span>{' '}
-                <span className="font-medium">{threshold}</span>
-              </span>
-              <button onClick={() => startEdit(rule)} className="text-muted-foreground hover:text-foreground transition-colors p-1">
-                <Pencil className="h-3.5 w-3.5" />
-              </button>
-              <button onClick={() => deleteRule(rule.id)} className="text-muted-foreground hover:text-destructive transition-colors p-1">
-                <Trash2 className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          )
-        })}
+              return (
+                <div
+                  key={rule.id}
+                  className="flex items-center gap-3 px-4 py-3.5"
+                  style={{ borderTop: i > 0 ? '1px solid var(--border)' : undefined }}
+                >
+                  <div className="flex flex-col flex-1 gap-0.5 min-w-0">
+                    <span className="text-sm font-medium truncate" style={{ color: 'var(--foreground)' }}>
+                      {collector?.name ?? rule.collector_id}
+                    </span>
+                    <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
+                      {CONDITION_LABELS[rule.condition] ?? rule.condition} {threshold}
+                    </span>
+                  </div>
+                  <span
+                    className="text-[11px] font-medium px-2.5 py-1 rounded-full shrink-0"
+                    style={{
+                      background: rule.enabled ? 'var(--sp-success-muted)' : 'var(--muted)',
+                      color: rule.enabled ? 'var(--sp-success)' : 'var(--muted-foreground)',
+                      cursor: 'pointer',
+                    }}
+                    onClick={() => toggleEnabled(rule)}
+                  >
+                    {rule.enabled ? 'Active' : 'Paused'}
+                  </span>
+                  <button
+                    onClick={() => startEdit(rule)}
+                    className="p-1 transition-colors"
+                    style={{ color: 'var(--muted-foreground)' }}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    onClick={() => deleteRule(rule.id)}
+                    className="p-1 transition-colors"
+                    style={{ color: 'var(--muted-foreground)' }}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
 
+      {/* Inline add/edit form */}
       {showForm && (
-        <div className="bg-card border border-border rounded-lg p-4 mb-3 space-y-4">
+        <div
+          className="rounded-xl p-4 flex flex-col gap-4"
+          style={{ background: 'var(--card)', border: '1px solid var(--border)' }}
+        >
           {alertTemplates.length > 0 && (
             <div>
-              <p className="text-xs text-muted-foreground mb-2">Presets</p>
+              <p className="text-xs mb-2" style={{ color: 'var(--muted-foreground)' }}>Presets</p>
               <div className="flex gap-2 flex-wrap">
                 {alertTemplates.map((t) => (
                   <button
                     key={t.id}
                     onClick={() => applyPreset(t)}
-                    className="text-xs px-2.5 py-1 rounded-md border border-border text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors"
+                    className="text-xs px-2.5 py-1 rounded-md transition-colors"
+                    style={{ border: '1px solid var(--border)', color: 'var(--muted-foreground)' }}
                   >
                     {t.name}
                   </button>
@@ -187,7 +235,8 @@ export function AlertRulesSection({ serviceId, alertTemplates, collectors }: Ale
               <select
                 value={collectorId}
                 onChange={(e) => setCollectorId(e.target.value)}
-                className="w-full mt-1 text-sm bg-background border border-border rounded-md px-2 py-1.5 text-foreground"
+                className="w-full mt-1 text-sm rounded-md px-2 py-1.5"
+                style={{ background: 'var(--background)', border: '1px solid var(--border)', color: 'var(--foreground)' }}
               >
                 {collectors.map((c) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
@@ -199,15 +248,17 @@ export function AlertRulesSection({ serviceId, alertTemplates, collectors }: Ale
               <select
                 value={condition}
                 onChange={(e) => setCondition(e.target.value)}
-                className="w-full mt-1 text-sm bg-background border border-border rounded-md px-2 py-1.5 text-foreground"
+                className="w-full mt-1 text-sm rounded-md px-2 py-1.5"
+                style={{ background: 'var(--background)', border: '1px solid var(--border)', color: 'var(--foreground)' }}
               >
-                {isNumeric
-                  ? <>
-                      <option value="lt">is less than</option>
-                      <option value="gt">is greater than</option>
-                    </>
-                  : <option value="status_is">status is</option>
-                }
+                {isNumeric ? (
+                  <>
+                    <option value="lt">is less than</option>
+                    <option value="gt">is greater than</option>
+                  </>
+                ) : (
+                  <option value="status_is">status is</option>
+                )}
               </select>
             </div>
             <div>
@@ -224,7 +275,8 @@ export function AlertRulesSection({ serviceId, alertTemplates, collectors }: Ale
                 <select
                   value={thresholdText}
                   onChange={(e) => setThresholdText(e.target.value)}
-                  className="w-full mt-1 text-sm bg-background border border-border rounded-md px-2 py-1.5 text-foreground"
+                  className="w-full mt-1 text-sm rounded-md px-2 py-1.5"
+                  style={{ background: 'var(--background)', border: '1px solid var(--border)', color: 'var(--foreground)' }}
                 >
                   {['healthy', 'warning', 'critical', 'unknown'].map((v) => (
                     <option key={v} value={v}>{v}</option>
@@ -235,21 +287,15 @@ export function AlertRulesSection({ serviceId, alertTemplates, collectors }: Ale
           </div>
 
           <div className="flex justify-end gap-2">
-            <Button variant="outline" size="sm" onClick={resetForm} disabled={saving}>Cancel</Button>
+            <Button variant="outline" size="sm" onClick={resetForm} disabled={saving}>
+              Cancel
+            </Button>
             <Button size="sm" onClick={handleSave} disabled={saving || (isNumeric && !thresholdNumeric)}>
-              {saving ? 'Saving\u2026' : editingId ? 'Update' : 'Save'}
+              {saving ? 'Saving…' : editingId ? 'Update' : 'Save'}
             </Button>
           </div>
         </div>
       )}
-
-      <button
-        onClick={() => setShowForm(true)}
-        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <Plus className="h-3.5 w-3.5" />
-        Add alert rule
-      </button>
-    </section>
+    </div>
   )
 }

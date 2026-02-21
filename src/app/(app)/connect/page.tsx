@@ -1,74 +1,95 @@
 import Link from 'next/link'
 import { getAllProviders } from '@/lib/providers'
 import { ProviderIcon } from '@/components/provider-icon'
-import type { ServiceProvider } from '@/lib/providers'
 
-const CATEGORY_LABELS: Record<string, string> = {
-  ai: 'AI / LLM',
-  email: 'Email',
-  monitoring: 'Monitoring',
-  payment: 'Payments',
-  hosting: 'DevOps',
-  infrastructure: 'Infrastructure',
-  other: 'Other',
+// Provider descriptions (shown on cards)
+const DESCRIPTIONS: Record<string, string> = {
+  github:        'Monitor rate limits, repository count, and API usage via OAuth2.',
+  stripe:        'Track account balance, payment status, and revenue metrics.',
+  vercel:        'Monitor bandwidth usage, deployment status, and project health.',
+  openai:        'Track credit balance, monthly usage, and spending trends.',
+  sentry:        'Monitor error counts, issue tracking, and application health.',
+  resend:        'Track email delivery, connection status, and sending health.',
+  openrouter:    'Monitor credit balance and model usage across OpenRouter AI.',
+  'upstash-redis':  'Track daily commands, memory usage, and database health.',
+  'upstash-qstash': 'Monitor message delivery, failures, and monthly quota usage.',
 }
 
-const CATEGORY_ORDER = ['ai', 'payment', 'hosting', 'infrastructure', 'monitoring', 'email', 'other']
+const AUTH_LABEL: Record<string, string> = {
+  api_key: 'API Key',
+  oauth2:  'OAuth2',
+  hybrid:  'OAuth2',
+  token:   'Token',
+}
 
 export default function ConnectPage() {
   const providers = getAllProviders()
 
-  const grouped = providers.reduce((acc, p) => {
-    const cat = p.category ?? 'other'
-    if (!acc[cat]) acc[cat] = []
-    acc[cat].push(p)
-    return acc
-  }, {} as Record<string, ServiceProvider[]>)
-
-  const sortedCategories = CATEGORY_ORDER.filter((cat) => grouped[cat]?.length)
-
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-xl font-semibold text-foreground">Connect a Service</h1>
-        <p className="text-sm text-muted-foreground mt-1">Select an API service to connect</p>
+    <div className="p-8 flex flex-col gap-6" style={{ background: 'var(--background)' }}>
+
+      {/* Header */}
+      <div className="flex flex-col gap-1">
+        <h1 className="text-2xl font-bold" style={{ color: 'var(--foreground)' }}>
+          Connect a Service
+        </h1>
+        <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
+          Choose a provider to connect and start monitoring metrics
+        </p>
       </div>
 
-      <div className="space-y-8">
-        {sortedCategories.map((category) => (
-          <section key={category}>
-            <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">
-              {CATEGORY_LABELS[category] ?? category}
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {grouped[category].map((provider) => (
-                <Link key={provider.id} href={`/connect/${provider.id}`}>
-                  <div className="bg-card border border-border rounded-xl p-5 hover:border-emerald-500/30 hover:bg-card/80 transition-all cursor-pointer group">
-                    <div className="flex items-center gap-3 mb-3">
-                      <ProviderIcon providerId={provider.id} size={36} />
-                      <div>
-                        <h3 className="text-sm font-semibold text-foreground group-hover:text-emerald-400 transition-colors">
-                          {provider.name}
-                        </h3>
-                        <p className="text-xs text-muted-foreground">
-                          {CATEGORY_LABELS[provider.category] ?? provider.category}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">
-                        {provider.authType === 'oauth2' ? 'OAuth' :
-                         provider.authType === 'hybrid' ? 'OAuth / API Key' : 'API Key'}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        Tracks {provider.collectors.length} metric{provider.collectors.length !== 1 ? 's' : ''}
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              ))}
+      {/* Section label */}
+      <p className="text-xs font-medium" style={{ color: 'var(--muted-foreground)' }}>
+        Available Providers
+      </p>
+
+      {/* Provider grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {providers.map((provider) => (
+          <Link key={provider.id} href={`/connect/${provider.id}`} className="group block">
+            <div
+              className="sp-provider-card flex flex-col gap-4 p-5 rounded-xl h-full transition-colors"
+              style={{ background: 'var(--card)', border: '1px solid var(--border)' }}
+            >
+              {/* Icon + name */}
+              <div className="flex items-center gap-3">
+                <ProviderIcon providerId={provider.id} size={40} />
+                <h3 className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>
+                  {provider.name}
+                </h3>
+              </div>
+
+              {/* Description */}
+              <p
+                className="text-xs leading-relaxed flex-1"
+                style={{ color: 'var(--muted-foreground)' }}
+              >
+                {DESCRIPTIONS[provider.id] ?? `Connect ${provider.name} to monitor metrics.`}
+              </p>
+
+              {/* Footer: auth badge + connect button */}
+              <div className="flex items-center justify-between">
+                <span
+                  className="text-[11px] font-medium px-2.5 py-1 rounded-full"
+                  style={{
+                    background: 'var(--muted)',
+                    color: 'var(--muted-foreground)',
+                  }}
+                >
+                  {AUTH_LABEL[provider.authType] ?? provider.authType}
+                </span>
+                <span
+                  className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+                  style={{
+                    background: 'var(--primary)',
+                    color: 'var(--primary-foreground)',
+                  }}
+                >
+                  Connect
+                </span>
+              </div>
             </div>
-          </section>
+          </Link>
         ))}
       </div>
     </div>

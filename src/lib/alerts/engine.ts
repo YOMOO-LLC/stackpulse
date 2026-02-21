@@ -20,14 +20,15 @@ const COOLDOWN_MS = 60 * 60 * 1000 // 1 hour
 
 export function evaluateAlerts(
   rules: AlertConfigRow[],
-  snapshot: SnapshotInput
+  snapshot: SnapshotInput,
+  options?: { skipCooldown?: boolean }
 ): AlertConfigRow[] {
   return rules.filter((rule) => {
     if (!rule.enabled) return false
     if (rule.collector_id !== snapshot.collectorId) return false
     if (snapshot.value === null) return false
 
-    if (rule.last_notified_at) {
+    if (!options?.skipCooldown && rule.last_notified_at) {
       const elapsed = Date.now() - new Date(rule.last_notified_at).getTime()
       if (elapsed < COOLDOWN_MS) return false
     }

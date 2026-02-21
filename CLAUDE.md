@@ -74,6 +74,8 @@ Supported providers and their `authType`:
 | OpenAI | `api_key` | credit_balance, monthly_usage |
 | Upstash Redis | `api_key` | daily_commands, memory_usage |
 | Upstash QStash | `api_key` | messages_delivered, messages_failed, monthly_quota_used |
+| MiniMax | `api_key` | connection_status |
+| Supabase | `oauth2` | connection_status |
 
 Adding a new provider requires **2 files** (3 if OAuth2) — see `README.md` for the full protocol:
 

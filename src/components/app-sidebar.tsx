@@ -2,148 +2,123 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Plus, LogOut, Clock, Bell } from 'lucide-react'
+import {
+  LayoutDashboard, Server, Bell, Plug, Clock, Settings2, LogOut,
+} from 'lucide-react'
 import { signOut } from '@/app/(auth)/login/actions'
-import { Button } from '@/components/ui/button'
 
 type Status = 'healthy' | 'warning' | 'critical' | 'unknown'
 
-interface SidebarService {
-  id: string
-  label: string
-  providerId: string
-  status: Status
-}
-
 interface AppSidebarProps {
-  services: SidebarService[]
   userEmail: string
+  alertCount?: number
 }
 
-const STATUS_COLORS: Record<Status, string> = {
-  healthy:  'bg-emerald-500',
-  warning:  'bg-amber-500',
-  critical: 'bg-red-500',
-  unknown:  'bg-zinc-600',
-}
-
-const NAV_LINKS = [
-  { label: 'History', href: '/dashboard/history', icon: Clock },
-  { label: 'Channels', href: '/dashboard/channels', icon: Bell },
+const NAV_ITEMS = [
+  { label: 'Dashboard', href: '/dashboard',         icon: LayoutDashboard },
+  { label: 'Services',  href: '/dashboard',         icon: Server          },
+  { label: 'Alerts',    href: '/dashboard/history', icon: Bell,  badge: true },
+  { label: 'Connect',   href: '/connect',           icon: Plug            },
+  { label: 'History',   href: '/dashboard/history', icon: Clock           },
+  { label: 'Settings',  href: '/dashboard/channels',icon: Settings2       },
 ]
 
-const PROVIDER_INITIALS: Record<string, string> = {
-  openrouter: 'OR',
-  resend:     'RS',
-  sentry:     'SN',
-}
-
-export function AppSidebar({ services, userEmail }: AppSidebarProps) {
+export function AppSidebar({ userEmail, alertCount = 0 }: AppSidebarProps) {
   const pathname = usePathname()
 
+  function isActive(label: string) {
+    if (label === 'Dashboard') return pathname === '/dashboard'
+    if (label === 'Services')  return pathname.startsWith('/dashboard/') && pathname !== '/dashboard/history' && pathname !== '/dashboard/channels'
+    if (label === 'Alerts')    return pathname === '/dashboard/history'
+    if (label === 'History')   return false
+    if (label === 'Connect')   return pathname.startsWith('/connect')
+    if (label === 'Settings')  return pathname === '/dashboard/channels'
+    return false
+  }
+
+  const initial = userEmail[0]?.toUpperCase() ?? 'U'
+
   return (
-    <aside className="w-60 shrink-0 flex flex-col bg-card border-r border-border h-screen sticky top-0">
+    <aside
+      className="w-56 shrink-0 flex flex-col h-screen sticky top-0"
+      style={{ background: '#08080C', borderRight: '1px solid var(--border)' }}
+    >
       {/* Logo */}
-      <div className="px-4 py-4 border-b border-border">
+      <div className="px-5 py-5">
         <Link href="/dashboard" className="flex items-center gap-2 group">
-          <span className="w-5 h-5 rounded bg-emerald-500 flex items-center justify-center text-[10px] font-bold text-white">
+          <span
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold flex-shrink-0"
+            style={{ background: 'var(--primary)', color: 'var(--primary-foreground)' }}
+          >
             SP
           </span>
-          <span className="font-semibold text-sm text-foreground group-hover:text-emerald-400 transition-colors">
+          <span className="font-semibold text-sm" style={{ color: 'var(--foreground)' }}>
             StackPulse
           </span>
         </Link>
       </div>
 
-      {/* Services */}
-      <nav className="flex-1 px-2 py-3 overflow-y-auto space-y-0.5">
-        {services.length === 0 ? (
-          <p className="text-xs text-muted-foreground px-2 py-2">No services connected</p>
-        ) : (
-          services.map((service) => {
-            const isActive = pathname.startsWith('/dashboard/' + service.id)
-            return (
-              <Link
-                key={service.id}
-                href={'/dashboard/' + service.id}
-                className={`
-                  flex items-center gap-2.5 px-2 py-1.5 rounded-md text-sm
-                  transition-colors relative group
-                  ${isActive
-                    ? 'bg-secondary text-foreground'
-                    : 'text-muted-foreground hover:bg-secondary/60 hover:text-foreground'
-                  }
-                `}
-              >
-                {/* Active indicator */}
-                {isActive && (
-                  <span className="absolute left-0 top-1 bottom-1 w-0.5 bg-emerald-500 rounded-full" />
-                )}
-                {/* Status dot */}
-                <span className="relative flex h-2 w-2 shrink-0">
-                  {(service.status === 'healthy' || service.status === 'warning') && (
-                    <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-60 ${STATUS_COLORS[service.status]}`} />
-                  )}
-                  <span className={`relative inline-flex rounded-full h-2 w-2 ${STATUS_COLORS[service.status]}`} />
+      {/* Navigation */}
+      <nav className="flex-1 px-3 flex flex-col gap-0.5">
+        {NAV_ITEMS.map(({ label, href, icon: Icon, badge }) => {
+          const active = isActive(label)
+          const showBadge = badge && alertCount > 0
+          return (
+            <Link
+              key={label}
+              href={href}
+              className="flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors"
+              style={{
+                color:      active ? 'var(--primary)' : 'var(--muted-foreground)',
+                background: active ? 'var(--sp-success-muted)' : 'transparent',
+              }}
+            >
+              <span className="flex items-center gap-2.5">
+                <Icon className="h-4 w-4 flex-shrink-0" />
+                {label}
+              </span>
+              {showBadge && (
+                <span
+                  className="flex items-center justify-center text-[10px] font-bold min-w-[18px] h-[18px] rounded-full px-1"
+                  style={{ background: 'var(--sp-error)', color: '#fff' }}
+                >
+                  {alertCount > 99 ? '99+' : alertCount}
                 </span>
-                {/* Provider initials badge */}
-                <span className="w-5 h-5 rounded bg-secondary flex items-center justify-center text-[9px] font-bold text-muted-foreground shrink-0">
-                  {PROVIDER_INITIALS[service.providerId] ?? service.providerId.slice(0, 2).toUpperCase()}
-                </span>
-                {/* Name */}
-                <span className="truncate">{service.label}</span>
-              </Link>
-            )
-          })
-        )}
+              )}
+            </Link>
+          )
+        })}
       </nav>
 
-      {/* Navigation links */}
-      <div className="px-2">
-        <div className="border-t border-border my-2" />
-        <div className="space-y-0.5">
-          {NAV_LINKS.map(({ label, href, icon: Icon }) => (
-            <Link
-              key={href}
-              href={href}
-              className={`
-                flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors
-                ${pathname === href
-                  ? 'bg-secondary text-foreground'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'
-                }
-              `}
-            >
-              <Icon className="h-4 w-4" />
-              {label}
-            </Link>
-          ))}
+      {/* User info */}
+      <div
+        className="px-4 py-4 flex items-center gap-3"
+        style={{ borderTop: '1px solid var(--border)' }}
+      >
+        <div
+          className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+          style={{ background: 'var(--sp-success-muted)', color: 'var(--primary)' }}
+        >
+          {initial}
         </div>
-      </div>
-
-      {/* Bottom actions */}
-      <div className="px-2 py-3 border-t border-border space-y-1">
-        <Link href="/connect">
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground border-border"
+        <div className="flex flex-col flex-1 min-w-0">
+          <span className="text-xs truncate" style={{ color: 'var(--foreground)' }}>
+            {userEmail}
+          </span>
+          <span className="text-[10px]" style={{ color: 'var(--sp-text-tertiary)' }}>
+            Free Plan
+          </span>
+        </div>
+        <form action={signOut}>
+          <button
+            type="submit"
+            className="transition-colors"
+            style={{ color: 'var(--sp-text-tertiary)' }}
+            aria-label="Sign out"
           >
-            <Plus className="h-3.5 w-3.5" />
-            Add Service
-          </Button>
-        </Link>
-        <div className="flex items-center gap-2 px-2 py-1.5">
-          <div className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center text-xs font-medium text-muted-foreground shrink-0">
-            {userEmail[0]?.toUpperCase()}
-          </div>
-          <span className="text-xs text-muted-foreground truncate flex-1">{userEmail}</span>
-          <form action={signOut}>
-            <button type="submit" className="text-muted-foreground hover:text-foreground transition-colors">
-              <LogOut className="h-3.5 w-3.5" />
-            </button>
-          </form>
-        </div>
+            <LogOut className="h-3.5 w-3.5" />
+          </button>
+        </form>
       </div>
     </aside>
   )

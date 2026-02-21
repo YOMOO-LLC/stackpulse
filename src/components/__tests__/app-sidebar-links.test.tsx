@@ -3,37 +3,36 @@ import { render, screen } from '@testing-library/react'
 import { AppSidebar } from '../app-sidebar'
 
 vi.mock('next/navigation', () => ({
-  usePathname: () => '/dashboard/svc-123',
+  usePathname: () => '/dashboard',
 }))
 
-const services = [
-  { id: 'svc-123', label: 'My OpenRouter', providerId: 'openrouter', status: 'healthy' as const },
-  { id: 'svc-456', label: 'My Resend', providerId: 'resend', status: 'unknown' as const },
-]
+vi.mock('@/app/(auth)/login/actions', () => ({
+  signOut: vi.fn(),
+}))
 
-describe('AppSidebar service links', () => {
-  it('links each service to its detail page', () => {
-    render(<AppSidebar services={services} userEmail="dev@test.com" />)
-    const links = screen.getAllByRole('link')
-    const serviceLinks = links.filter((l) => {
-      const href = l.getAttribute('href')
-      return href?.startsWith('/dashboard/svc-')
-    })
-    expect(serviceLinks).toHaveLength(2)
-    expect(serviceLinks[0].getAttribute('href')).toBe('/dashboard/svc-123')
-    expect(serviceLinks[1].getAttribute('href')).toBe('/dashboard/svc-456')
+describe('AppSidebar', () => {
+  it('renders all fixed nav items', () => {
+    render(<AppSidebar userEmail="dev@test.com" />)
+    expect(screen.getByText('Dashboard')).toBeTruthy()
+    expect(screen.getByText('Services')).toBeTruthy()
+    expect(screen.getByText('Alerts')).toBeTruthy()
+    expect(screen.getByText('Connect')).toBeTruthy()
+    expect(screen.getByText('History')).toBeTruthy()
+    expect(screen.getByText('Settings')).toBeTruthy()
   })
 
-  it('marks the active service with active styling', () => {
-    const { container } = render(<AppSidebar services={services} userEmail="dev@test.com" />)
-    const activeLink = container.querySelector('a[href="/dashboard/svc-123"]')
-    expect(activeLink?.className).toContain('bg-secondary')
+  it('shows user email in bottom section', () => {
+    render(<AppSidebar userEmail="dev@test.com" />)
+    expect(screen.getByText('dev@test.com')).toBeTruthy()
   })
 
-  it('does not mark inactive service as active', () => {
-    const { container } = render(<AppSidebar services={services} userEmail="dev@test.com" />)
-    const inactiveLink = container.querySelector('a[href="/dashboard/svc-456"]')
-    // Use regex to match standalone 'bg-secondary' (not 'bg-secondary/60' etc.)
-    expect(inactiveLink?.className).not.toMatch(/\bbg-secondary\b(?!\/)/)
+  it('shows alert badge when alertCount > 0', () => {
+    render(<AppSidebar userEmail="dev@test.com" alertCount={5} />)
+    expect(screen.getByText('5')).toBeTruthy()
+  })
+
+  it('does not show alert badge when alertCount is 0', () => {
+    render(<AppSidebar userEmail="dev@test.com" alertCount={0} />)
+    expect(screen.queryByText('0')).toBeNull()
   })
 })

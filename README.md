@@ -151,6 +151,8 @@ The custom view renders between the metric cards and the alert rules section on 
 | Upstash QStash | `api_key` | messages_delivered, messages_failed, monthly_quota_used |
 | OpenRouter | `api_key` | credit_balance |
 | Resend | `api_key` | connection_status |
+| MiniMax | `api_key` | connection_status |
+| Supabase | `oauth2` | connection_status |
 
 ---
 
@@ -173,6 +175,8 @@ VERCEL_CLIENT_ID=
 VERCEL_CLIENT_SECRET=
 SENTRY_CLIENT_ID=
 SENTRY_CLIENT_SECRET=
+SUPABASE_CLIENT_ID=
+SUPABASE_CLIENT_SECRET=
 ```
 
 ---
