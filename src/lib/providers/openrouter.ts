@@ -30,7 +30,7 @@ export const openrouterProvider: ServiceProvider = {
       collectorId: 'credit_balance',
       condition: 'lt',
       defaultThreshold: 10,
-      message: 'OpenRouter credits below ${threshold}',
+      message: 'OpenRouter credits are running low',
     },
   ],
   fetchMetrics: async (credentials) => {

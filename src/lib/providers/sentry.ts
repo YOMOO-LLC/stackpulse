@@ -16,7 +16,7 @@ export const sentryProvider: ServiceProvider = {
       refreshInterval: 300,
       endpoint: '/api/0/organizations/{orgSlug}/stats_v2/',
       thresholds: { warning: 10, critical: 50, direction: 'above' },
-      description: 'Errors in the last 24 hours',
+      description: 'Errors since the start of the current month',
       trend: true,
     },
   ],
