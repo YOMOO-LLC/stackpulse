@@ -28,6 +28,7 @@ export async function GET(
   if (label) await setLabelCookie(label)
 
   const authUrl = new URL(config.authorizationUrl)
+  authUrl.searchParams.set('response_type', 'code')
   authUrl.searchParams.set('client_id', config.clientId)
   authUrl.searchParams.set('redirect_uri', config.redirectUri)
   authUrl.searchParams.set('state', state)

@@ -41,6 +41,11 @@ describe('GET /api/oauth/authorize/[provider]', () => {
     expect(res.headers.get('location')).toContain('state=test-state-123')
   })
 
+  it('includes response_type=code in redirect URL', async () => {
+    const res = await GET(makeRequest('github') as never, { params: Promise.resolve({ provider: 'github' }) })
+    expect(res.headers.get('location')).toContain('response_type=code')
+  })
+
   it('returns 400 for unknown provider', async () => {
     const { getOAuthConfig } = await import('@/lib/oauth/config')
     vi.mocked(getOAuthConfig).mockReturnValueOnce(null)
