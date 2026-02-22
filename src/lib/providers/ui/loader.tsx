@@ -7,6 +7,8 @@ import { CUSTOM_DETAIL_VIEW_IDS } from './registry'
 // Statically list custom views so bundlers can analyse imports
 const VIEWS: Record<string, React.ComponentType<CustomDetailViewProps>> = {
   github: dynamic(() => import('./github')),
+  openai: dynamic(() => import('./openai')),
+  'upstash-redis': dynamic(() => import('./upstash-redis')),
 }
 
 export function CustomDetailViewLoader({

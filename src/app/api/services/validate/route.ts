@@ -4,6 +4,7 @@ import { getProvider } from '@/lib/providers'
 import { fetchOpenRouterMetrics } from '@/lib/providers/openrouter'
 import { fetchSentryMetrics } from '@/lib/providers/sentry'
 import { fetchResendMetrics } from '@/lib/providers/resend'
+import { fetchVercelMetrics } from '@/lib/providers/vercel'
 
 async function validateCredentials(
   providerId: string,
@@ -20,6 +21,10 @@ async function validateCredentials(
     }
     case 'resend': {
       const result = await fetchResendMetrics(credentials.apiKey)
+      return { valid: result.status !== 'unknown', status: result.status }
+    }
+    case 'vercel': {
+      const result = await fetchVercelMetrics(credentials.token)
       return { valid: result.status !== 'unknown', status: result.status }
     }
     default:
