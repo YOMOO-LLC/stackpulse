@@ -87,4 +87,39 @@ describe('ServiceActionsMenu', () => {
       expect(mockPush).toHaveBeenCalledWith('/dashboard')
     })
   })
+
+  it('resets rename loading state on fetch error', async () => {
+    vi.mocked(global.fetch).mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+    } as Response)
+    render(<ServiceActionsMenu serviceId="svc-1" currentLabel="My Service" />)
+    fireEvent.pointerDown(screen.getByRole('button'), { button: 0, ctrlKey: false, pointerType: 'mouse' })
+    await waitFor(() => screen.getByText('Rename'))
+    fireEvent.click(screen.getByText('Rename'))
+    await waitFor(() => screen.getByRole('dialog'))
+    fireEvent.click(screen.getByText('Save'))
+    await waitFor(() => {
+      expect(screen.getByText('Something went wrong. Please try again.')).toBeTruthy()
+      // Dialog stays open (not closed on error)
+      expect(screen.getByRole('dialog')).toBeTruthy()
+    })
+  })
+
+  it('resets delete loading state on fetch error', async () => {
+    vi.mocked(global.fetch).mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+    } as Response)
+    render(<ServiceActionsMenu serviceId="svc-1" currentLabel="My Service" />)
+    fireEvent.pointerDown(screen.getByRole('button'), { button: 0, ctrlKey: false, pointerType: 'mouse' })
+    await waitFor(() => screen.getByText('Delete service'))
+    fireEvent.click(screen.getByText('Delete service'))
+    await waitFor(() => screen.getByText('Delete service?'))
+    fireEvent.click(screen.getByRole('button', { name: /delete service/i }))
+    await waitFor(() => {
+      expect(screen.getByText('Something went wrong. Please try again.')).toBeTruthy()
+      expect(screen.getByRole('dialog')).toBeTruthy()
+    })
+  })
 })

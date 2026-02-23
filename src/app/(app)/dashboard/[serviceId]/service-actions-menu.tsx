@@ -34,23 +34,39 @@ export function ServiceActionsMenu({ serviceId, currentLabel }: ServiceActionsMe
   const [renameValue, setRenameValue] = useState(currentLabel)
   const [renameLoading, setRenameLoading] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
+  const [renameError, setRenameError] = useState<string | null>(null)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   async function handleRename() {
     setRenameLoading(true)
-    await fetch(`/api/services/${serviceId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ label: renameValue }),
-    })
-    setRenameLoading(false)
-    setRenameOpen(false)
-    router.refresh()
+    setRenameError(null)
+    try {
+      const res = await fetch(`/api/services/${serviceId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ label: renameValue }),
+      })
+      if (!res.ok) throw new Error('Failed to rename')
+      setRenameOpen(false)
+      router.refresh()
+    } catch {
+      setRenameError('Something went wrong. Please try again.')
+    } finally {
+      setRenameLoading(false)
+    }
   }
 
   async function handleDelete() {
     setDeleteLoading(true)
-    await fetch(`/api/services/${serviceId}`, { method: 'DELETE' })
-    router.push('/dashboard')
+    setDeleteError(null)
+    try {
+      const res = await fetch(`/api/services/${serviceId}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed to delete')
+      router.push('/dashboard')
+    } catch {
+      setDeleteError('Something went wrong. Please try again.')
+      setDeleteLoading(false)
+    }
   }
 
   return (
@@ -84,7 +100,7 @@ export function ServiceActionsMenu({ serviceId, currentLabel }: ServiceActionsMe
       </DropdownMenu>
 
       {/* Rename Dialog */}
-      <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
+      <Dialog open={renameOpen} onOpenChange={(open) => { setRenameOpen(open); if (!open) setRenameError(null) }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Rename service</DialogTitle>
@@ -121,11 +137,14 @@ export function ServiceActionsMenu({ serviceId, currentLabel }: ServiceActionsMe
               {renameLoading ? 'Saving\u2026' : 'Save'}
             </Button>
           </DialogFooter>
+          {renameError && (
+            <p className="text-xs text-red-500 mt-1">{renameError}</p>
+          )}
         </DialogContent>
       </Dialog>
 
       {/* Delete Dialog */}
-      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+      <Dialog open={deleteOpen} onOpenChange={(open) => { setDeleteOpen(open); if (!open) setDeleteError(null) }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete service?</DialogTitle>
@@ -149,6 +168,9 @@ export function ServiceActionsMenu({ serviceId, currentLabel }: ServiceActionsMe
               {deleteLoading ? 'Deleting\u2026' : 'Delete service'}
             </Button>
           </DialogFooter>
+          {deleteError && (
+            <p className="text-xs text-red-500 mt-1">{deleteError}</p>
+          )}
         </DialogContent>
       </Dialog>
     </>
