@@ -4,80 +4,67 @@ import { Button } from '@/components/ui/button'
 import { ProviderIcon } from '@/components/provider-icon'
 import { getProvider } from '@/lib/providers'
 import {
-  Server, CheckCircle2, AlertTriangle, XCircle,
-  ChevronRight, AlertOctagon,
+  Server, CheckCircle, TriangleAlert, CircleX, CircleCheck,
+  ChevronDown,
 } from 'lucide-react'
+import {
+  timeAgo, groupByProvider, pickKeyMetrics, formatAlertTitle,
+  type ServiceRow, type CollectorRow,
+} from './helpers'
 
 type Status = 'healthy' | 'warning' | 'critical' | 'unknown'
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ── Status helpers ────────────────────────────────────────────────────────────
 
-function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime()
-  const minutes = Math.floor(diff / 60000)
-  if (minutes < 1) return 'just now'
-  if (minutes < 60) return `${minutes} min ago`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  return `${Math.floor(hours / 24)}d ago`
-}
-
-function serviceStatus(collectors: Array<{ snapshot: { status: string } | null }>): Status {
+function serviceStatus(collectors: CollectorRow[]): Status {
   if (collectors.some((c) => c.snapshot?.status === 'critical')) return 'critical'
   if (collectors.some((c) => c.snapshot?.status === 'warning'))  return 'warning'
   if (collectors.every((c) => !c.snapshot || c.snapshot.status === 'healthy')) return 'healthy'
   return 'unknown'
 }
 
-const STATUS_BADGE: Record<Status, { label: string; bg: string; color: string }> = {
-  healthy:  { label: 'Healthy',  bg: 'var(--sp-success-muted)', color: 'var(--sp-success)' },
-  warning:  { label: 'Warning',  bg: 'var(--sp-warning-muted)', color: 'var(--sp-warning)' },
-  critical: { label: 'Critical', bg: 'var(--sp-error-muted)',   color: 'var(--sp-error)'   },
-  unknown:  { label: 'Unknown',  bg: 'var(--muted)',            color: 'var(--muted-foreground)' },
+const STATUS_DOT: Record<Status, { label: string; color: string; dot: string }> = {
+  healthy:  { label: 'Healthy', color: '#10B981', dot: '#10B981' },
+  warning:  { label: 'Warning', color: '#F59E0B', dot: '#F59E0B' },
+  critical: { label: 'Failed',  color: '#EF4444', dot: '#EF4444' },
+  unknown:  { label: 'Unknown', color: '#555570', dot: '#555570' },
 }
 
-// ── Metric Card ───────────────────────────────────────────────────────────────
+// ── Sub-components ────────────────────────────────────────────────────────────
 
-function MetricCard({
-  label, value, icon: Icon, iconColor, iconBg, sub, progressPct,
-}: {
-  label: string
-  value: number
-  icon: React.ElementType
-  iconColor: string
-  iconBg: string
-  sub?: string
-  progressPct?: number
-}) {
+function StatusDot({ status }: { status: Status }) {
+  const s = STATUS_DOT[status]
   return (
-    <div
-      className="flex flex-col gap-3 p-5 rounded-xl flex-1"
-      style={{ background: 'var(--card)', border: '1px solid var(--border)' }}
-    >
-      <div className="flex items-start justify-between">
-        <div className="flex flex-col gap-1">
-          <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>{label}</p>
-          <p className="text-3xl font-bold" style={{ color: iconColor }}>{value}</p>
-        </div>
-        <div
-          className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-          style={{ background: iconBg }}
-        >
-          <Icon className="h-4 w-4" style={{ color: iconColor }} />
-        </div>
-      </div>
-      {progressPct !== undefined && (
-        <div className="h-1 rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>
-          <div
-            className="h-full rounded-full transition-all"
-            style={{ width: `${progressPct}%`, background: iconColor }}
-          />
-        </div>
-      )}
-      {sub && (
-        <p className="text-xs" style={{ color: 'var(--sp-text-tertiary)' }}>{sub}</p>
-      )}
-    </div>
+    <span className="flex items-center gap-1.5">
+      <span
+        className="rounded-full flex-shrink-0"
+        style={{ width: 6, height: 6, background: s.dot }}
+      />
+      <span className="text-xs font-medium" style={{ color: s.color }}>{s.label}</span>
+    </span>
+  )
+}
+
+function InlineMetrics({ collectors }: { collectors: CollectorRow[] }) {
+  const metrics = pickKeyMetrics(collectors, 3)
+  if (metrics.length === 0) return <span className="text-xs" style={{ color: '#555570' }}>—</span>
+  return (
+    <span className="flex items-center gap-4">
+      {metrics.map((c) => {
+        const val = c.snapshot!.value_text
+          ?? (c.snapshot!.value !== null
+            ? `${Number(c.snapshot!.value).toLocaleString()}${c.snapshot!.unit ? ' ' + c.snapshot!.unit : ''}`
+            : '—')
+        // derive a short label from the collector name
+        const short = c.name.split(' ').pop()?.toLowerCase() ?? c.id
+        return (
+          <span key={c.id} className="flex items-center gap-1">
+            <span className="text-xs font-semibold" style={{ color: '#F0F0F5' }}>{val}</span>
+            <span className="text-[11px]" style={{ color: '#555570' }}>{short}</span>
+          </span>
+        )
+      })}
+    </span>
   )
 }
 
@@ -99,7 +86,7 @@ export default async function DashboardPage() {
     .eq('user_id', user!.id)
     .order('created_at', { ascending: false })
 
-  const servicesWithMeta = (services ?? []).map((service) => {
+  const servicesWithMeta: ServiceRow[] = (services ?? []).map((service) => {
     const provider = getProvider(service.provider_id)
     const snapshots = (service.metric_snapshots ?? []) as Array<{
       collector_id: string; value: number | null; value_text: string | null
@@ -113,18 +100,15 @@ export default async function DashboardPage() {
       if (!latestByCollector.has(snap.collector_id)) latestByCollector.set(snap.collector_id, snap)
     }
 
-    const collectors = (provider?.collectors ?? []).map((c) => ({
-      id: c.id, name: c.name, type: c.metricType,
-      snapshot: (latestByCollector.get(c.id) ?? null) as {
-        collector_id: string; value: number | null; value_text: string | null
-        unit: string | null; status: Status; fetched_at: string
-      } | null,
+    const collectors: CollectorRow[] = (provider?.collectors ?? []).map((c) => ({
+      id: c.id, name: c.name,
+      snapshot: (latestByCollector.get(c.id) ?? null) as CollectorRow['snapshot'],
     }))
 
     const lastUpdated = collectors
       .map((c) => c.snapshot?.fetched_at).filter(Boolean).sort().pop()
 
-    const status = service.auth_expired ? 'critical' as Status : serviceStatus(collectors)
+    const status: Status = service.auth_expired ? 'critical' : serviceStatus(collectors)
 
     return {
       id: service.id,
@@ -142,6 +126,10 @@ export default async function DashboardPage() {
   const healthyCount = servicesWithMeta.filter((s) => s.status === 'healthy').length
   const warningCount = servicesWithMeta.filter((s) => s.status === 'warning').length
   const errorCount   = servicesWithMeta.filter((s) => s.status === 'critical').length
+  const warningNames = servicesWithMeta.filter((s) => s.status === 'warning').map((s) => s.label).join(', ')
+  const failedNames  = servicesWithMeta.filter((s) => s.status === 'critical').map((s) => s.label).join(', ')
+
+  const groups = groupByProvider(servicesWithMeta)
 
   // ── Recent alert events ───────────────────────────────────────────────────
   const serviceIds = servicesWithMeta.map((s) => s.id)
@@ -151,8 +139,6 @@ export default async function DashboardPage() {
     collector_id: string
     condition: string
     threshold_numeric: number | null
-    triggered_value_numeric: number | null
-    triggered_value_text: string | null
     serviceLabel: string
     severity: Status
   }> = []
@@ -167,7 +153,7 @@ export default async function DashboardPage() {
     if (configIds.length > 0) {
       const { data: events } = await supabase
         .from('alert_events')
-        .select('id, notified_at, triggered_value_numeric, triggered_value_text, alert_config_id')
+        .select('id, notified_at, alert_config_id')
         .in('alert_config_id', configIds)
         .order('notified_at', { ascending: false })
         .limit(5)
@@ -182,8 +168,6 @@ export default async function DashboardPage() {
           collector_id: cfg?.collector_id ?? '',
           condition: cfg?.condition ?? '',
           threshold_numeric: cfg?.threshold_numeric ?? null,
-          triggered_value_numeric: e.triggered_value_numeric,
-          triggered_value_text: e.triggered_value_text,
           serviceLabel: svc?.label ?? 'Unknown service',
           severity: (cfg?.condition === 'gt' ? 'critical' : 'warning') as Status,
         }
@@ -194,150 +178,299 @@ export default async function DashboardPage() {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex flex-col gap-6 p-8" style={{ background: 'var(--background)' }}>
+    <div
+      className="flex flex-col gap-6"
+      style={{ padding: '28px 32px', background: 'var(--background)', minHeight: '100%' }}
+    >
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-center justify-between">
         <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-bold" style={{ color: 'var(--foreground)' }}>Dashboard</h1>
-          <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
+          <h1
+            className="text-2xl font-bold"
+            style={{ color: '#F0F0F5', letterSpacing: '-0.5px' }}
+          >
+            Dashboard
+          </h1>
+          <p className="text-sm" style={{ color: '#8888A0' }}>
             Monitor all your connected services at a glance
           </p>
         </div>
-        <Button asChild size="sm" style={{ background: 'var(--primary)', color: 'var(--primary-foreground)' }}>
-          <Link href="/connect">+ Add Service</Link>
-        </Button>
+        <div className="flex items-center gap-2.5">
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            style={{ border: '1px solid #1E1E2A', background: 'transparent', color: '#F0F0F5' }}
+          >
+            <Link href="/connect">+ Add Service</Link>
+          </Button>
+        </div>
       </div>
 
       {/* ── Metric Cards ───────────────────────────────────────────────────── */}
-      <div className="flex gap-4">
-        <MetricCard
-          label="Active Services"
-          value={totalCount}
-          icon={Server}
-          iconColor="var(--foreground)"
-          iconBg="var(--muted)"
-        />
-        <MetricCard
-          label="Healthy"
-          value={healthyCount}
-          icon={CheckCircle2}
-          iconColor="var(--sp-success)"
-          iconBg="var(--sp-success-muted)"
-          progressPct={totalCount > 0 ? Math.round((healthyCount / totalCount) * 100) : 0}
-        />
-        <MetricCard
-          label="Warnings"
-          value={warningCount}
-          icon={AlertTriangle}
-          iconColor="var(--sp-warning)"
-          iconBg="var(--sp-warning-muted)"
-          sub={warningCount > 0 ? 'Needs attention' : undefined}
-        />
-        <MetricCard
-          label="Errors"
-          value={errorCount}
-          icon={XCircle}
-          iconColor="var(--sp-error)"
-          iconBg="var(--sp-error-muted)"
-          sub={errorCount > 0 ? 'Verify auth/config' : undefined}
-        />
+      <div className="grid grid-cols-4 gap-4">
+        {/* Active Services */}
+        <div
+          className="flex flex-col gap-3 p-5 rounded-xl"
+          style={{ background: '#111118', border: '1px solid #1E1E2A' }}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium" style={{ color: '#8888A0' }}>Active Services</span>
+            <Server className="h-4 w-4" style={{ color: '#555570' }} />
+          </div>
+          <span className="text-3xl font-bold" style={{ color: '#F0F0F5', letterSpacing: '-1px' }}>
+            {totalCount}
+          </span>
+          <span className="flex items-center gap-1 text-xs font-medium" style={{ color: '#10B981' }}>
+            {totalCount > 0 ? `${totalCount} connected` : 'No services yet'}
+          </span>
+        </div>
+
+        {/* Healthy */}
+        <div
+          className="flex flex-col gap-3 p-5 rounded-xl"
+          style={{ background: '#111118', border: '1px solid #1E1E2A' }}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium" style={{ color: '#8888A0' }}>Healthy</span>
+            <CircleCheck className="h-4 w-4" style={{ color: '#10B981' }} />
+          </div>
+          <span className="text-3xl font-bold" style={{ color: '#10B981', letterSpacing: '-1px' }}>
+            {healthyCount}
+          </span>
+          <div className="h-1 rounded-full overflow-hidden" style={{ background: '#1E1E2A' }}>
+            <div
+              className="h-full rounded-full"
+              style={{
+                width: `${totalCount > 0 ? Math.round((healthyCount / totalCount) * 100) : 0}%`,
+                background: '#10B981',
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Warnings */}
+        <div
+          className="flex flex-col gap-3 p-5 rounded-xl"
+          style={{ background: '#111118', border: '1px solid #1E1E2A' }}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium" style={{ color: '#8888A0' }}>Warnings</span>
+            <TriangleAlert className="h-4 w-4" style={{ color: '#F59E0B' }} />
+          </div>
+          <span className="text-3xl font-bold" style={{ color: '#F59E0B', letterSpacing: '-1px' }}>
+            {warningCount}
+          </span>
+          {warningCount > 0 ? (
+            <span className="flex items-center gap-1.5">
+              <span className="rounded-full flex-shrink-0" style={{ width: 6, height: 6, background: '#F59E0B' }} />
+              <span className="text-xs truncate" style={{ color: '#555570' }}>{warningNames}</span>
+            </span>
+          ) : (
+            <span className="text-xs" style={{ color: '#555570' }}>All clear</span>
+          )}
+        </div>
+
+        {/* Failed */}
+        <div
+          className="flex flex-col gap-3 p-5 rounded-xl"
+          style={{ background: '#111118', border: '1px solid #1E1E2A' }}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium" style={{ color: '#8888A0' }}>Failed</span>
+            <CircleX className="h-4 w-4" style={{ color: '#EF4444' }} />
+          </div>
+          <span className="text-3xl font-bold" style={{ color: '#EF4444', letterSpacing: '-1px' }}>
+            {errorCount}
+          </span>
+          {errorCount > 0 ? (
+            <span className="flex items-center gap-1.5">
+              <span className="rounded-full flex-shrink-0" style={{ width: 6, height: 6, background: '#EF4444' }} />
+              <span className="text-xs truncate" style={{ color: '#555570' }}>{failedNames}</span>
+            </span>
+          ) : (
+            <span className="text-xs" style={{ color: '#555570' }}>No failures</span>
+          )}
+        </div>
       </div>
 
       {/* ── Connected Services ─────────────────────────────────────────────── */}
-      <section>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-semibold" style={{ color: 'var(--foreground)' }}>
+      <section className="flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-semibold" style={{ color: '#F0F0F5' }}>
             Connected Services
           </h2>
           <Link
-            href="/dashboard"
-            className="flex items-center gap-1 text-xs transition-colors hover:opacity-80"
-            style={{ color: 'var(--primary)' }}
+            href="/connect"
+            className="text-xs font-medium transition-colors hover:opacity-80"
+            style={{ color: '#10B981' }}
           >
-            View All <ChevronRight className="h-3 w-3" />
+            View All
           </Link>
         </div>
 
         {servicesWithMeta.length === 0 ? (
           <div
             className="flex flex-col items-center justify-center py-16 rounded-xl text-center"
-            style={{ background: 'var(--card)', border: '1px solid var(--border)' }}
+            style={{ background: '#111118', border: '1px solid #1E1E2A' }}
           >
             <div
               className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4"
-              style={{ background: 'var(--muted)', border: '1px solid var(--border)' }}
+              style={{ background: '#1A1A24', border: '1px solid #1E1E2A' }}
             >
-              <Server className="h-6 w-6" style={{ color: 'var(--muted-foreground)' }} />
+              <Server className="h-6 w-6" style={{ color: '#555570' }} />
             </div>
-            <p className="text-sm font-medium mb-1" style={{ color: 'var(--foreground)' }}>
+            <p className="text-sm font-medium mb-1" style={{ color: '#F0F0F5' }}>
               No services connected
             </p>
-            <p className="text-xs mb-4" style={{ color: 'var(--muted-foreground)' }}>
+            <p className="text-xs mb-4" style={{ color: '#8888A0' }}>
               Connect your first API service to start monitoring
             </p>
-            <Button asChild size="sm" style={{ background: 'var(--primary)', color: 'var(--primary-foreground)' }}>
+            <Button
+              asChild size="sm"
+              style={{ background: '#10B981', color: '#000' }}
+            >
               <Link href="/connect">Connect a service</Link>
             </Button>
           </div>
         ) : (
-          <div className="flex flex-col gap-3">
-            {servicesWithMeta.map((svc) => {
-              const badge = STATUS_BADGE[svc.status]
-              // Pick primary metrics to show (max 2)
-              const keyMetrics = svc.collectors
-                .filter((c) => c.snapshot)
-                .slice(0, 2)
-              return (
-                <Link
-                  key={svc.id}
-                  href={`/dashboard/${svc.id}`}
-                  className="flex items-center gap-4 px-5 py-4 rounded-xl transition-colors hover:opacity-90"
-                  style={{ background: 'var(--card)', border: '1px solid var(--border)' }}
-                >
-                  {/* Provider icon */}
-                  <ProviderIcon providerId={svc.providerId} size={36} />
+          <div
+            className="rounded-xl overflow-hidden"
+            style={{ background: '#111118', border: '1px solid #1E1E2A' }}
+          >
+            {/* Table Header */}
+            <div
+              className="flex items-center px-4 py-2.5"
+              style={{ background: '#0D0D14', borderBottom: '1px solid #1E1E2A' }}
+            >
+              <span className="text-[11px] font-semibold" style={{ color: '#555570', width: 280 }}>Service</span>
+              <span className="text-[11px] font-semibold" style={{ color: '#555570', width: 100 }}>Status</span>
+              <span className="text-[11px] font-semibold flex-1" style={{ color: '#555570' }}>Key Metrics</span>
+              <span className="text-[11px] font-semibold" style={{ color: '#555570', textAlign: 'right', minWidth: 80 }}>Last Synced</span>
+            </div>
 
-                  {/* Name */}
-                  <div className="flex flex-col gap-0.5 w-36 flex-shrink-0">
-                    <span className="text-sm font-semibold truncate" style={{ color: 'var(--foreground)' }}>
-                      {svc.label}
-                    </span>
-                    <span className="text-xs truncate" style={{ color: 'var(--muted-foreground)' }}>
-                      {svc.providerName}
-                    </span>
-                  </div>
+            {/* Rows */}
+            {groups.map((group, gi) => {
+              const isLast = gi === groups.length - 1
+              const borderBottom = isLast ? undefined : '1px solid #1E1E2A'
 
-                  {/* Status badge */}
-                  <span
-                    className="px-2.5 py-1 rounded-full text-xs font-medium flex-shrink-0"
-                    style={{ background: badge.bg, color: badge.color }}
+              if (!group.isGroup) {
+                // Single service row
+                const svc = group.services[0]
+                return (
+                  <Link
+                    key={svc.id}
+                    href={`/dashboard/${svc.id}`}
+                    className="flex items-center px-4 py-3 transition-colors hover:bg-white/[0.02]"
+                    style={{ borderBottom }}
                   >
-                    {badge.label}
-                  </span>
-
-                  {/* Key metrics */}
-                  <div className="flex gap-6 flex-1">
-                    {keyMetrics.map((c) => (
-                      <div key={c.id} className="flex flex-col gap-0.5">
-                        <span className="text-[10px]" style={{ color: 'var(--sp-text-tertiary)' }}>{c.name}</span>
-                        <span className="text-sm font-semibold font-mono" style={{ color: 'var(--foreground)' }}>
-                          {c.snapshot?.value_text
-                            ?? (c.snapshot?.value !== null && c.snapshot?.value !== undefined
-                              ? `${c.snapshot.value.toLocaleString()}${c.snapshot.unit ? ' ' + c.snapshot.unit : ''}`
-                              : '—')}
+                    <div className="flex items-center gap-2.5" style={{ width: 280, minWidth: 0 }}>
+                      <ProviderIcon providerId={svc.providerId} size={22} />
+                      <span className="text-[13px] font-semibold truncate" style={{ color: '#F0F0F5' }}>
+                        {svc.label}
+                      </span>
+                    </div>
+                    <div style={{ width: 100 }}>
+                      <StatusDot status={svc.status} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <InlineMetrics collectors={svc.collectors} />
+                    </div>
+                    <div style={{ minWidth: 80, textAlign: 'right' }}>
+                      {svc.lastUpdated ? (
+                        <span className="text-[11px]" style={{ color: '#555570' }}>
+                          {timeAgo(svc.lastUpdated)}
                         </span>
-                      </div>
-                    ))}
+                      ) : null}
+                    </div>
+                  </Link>
+                )
+              }
+
+              // Group row + sub-rows
+              const groupLastUpdated = group.services
+                .map((s) => s.lastUpdated)
+                .filter(Boolean)
+                .sort()
+                .pop()
+
+              // aggregate key metrics from first service in group
+              const firstSvc = group.services[0]
+
+              return (
+                <div key={group.providerId} style={{ borderBottom }}>
+                  {/* Group header row */}
+                  <div
+                    className="flex items-center px-4 py-3"
+                    style={{ background: '#0F0F17', borderBottom: '1px solid #1E1E2A' }}
+                  >
+                    <div className="flex items-center gap-2.5" style={{ width: 280, minWidth: 0 }}>
+                      <ChevronDown className="h-3.5 w-3.5 flex-shrink-0" style={{ color: '#8888A0' }} />
+                      <ProviderIcon providerId={group.providerId} size={22} />
+                      <span className="text-[13px] font-semibold" style={{ color: '#F0F0F5' }}>
+                        {group.providerName}
+                      </span>
+                      <span
+                        className="rounded-full text-[10px] font-medium px-2 py-0.5"
+                        style={{ background: '#1A1A24', color: '#8888A0' }}
+                      >
+                        {group.services.length} projects
+                      </span>
+                    </div>
+                    <div style={{ width: 100 }}>
+                      <StatusDot status={group.groupStatus} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <InlineMetrics collectors={firstSvc.collectors} />
+                    </div>
+                    <div style={{ minWidth: 80, textAlign: 'right' }}>
+                      {groupLastUpdated ? (
+                        <span className="text-[11px]" style={{ color: '#555570' }}>
+                          {timeAgo(groupLastUpdated)}
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
 
-                  {/* Last synced */}
-                  {svc.lastUpdated && (
-                    <span className="text-xs flex-shrink-0" style={{ color: 'var(--sp-text-tertiary)' }}>
-                      Last synced {timeAgo(svc.lastUpdated)}
-                    </span>
-                  )}
-                </Link>
+                  {/* Sub-rows */}
+                  {group.services.map((svc, si) => {
+                    const isSubLast = si === group.services.length - 1
+                    return (
+                      <Link
+                        key={svc.id}
+                        href={`/dashboard/${svc.id}`}
+                        className="flex items-center transition-colors hover:bg-white/[0.02]"
+                        style={{
+                          paddingLeft: 42,
+                          paddingRight: 16,
+                          paddingTop: 10,
+                          paddingBottom: 10,
+                          borderBottom: isSubLast ? undefined : '1px solid #1E1E2A',
+                        }}
+                      >
+                        <div className="flex flex-col gap-0.5" style={{ width: 238, minWidth: 0 }}>
+                          <span className="text-xs font-medium truncate" style={{ color: '#F0F0F5' }}>
+                            {svc.label}
+                          </span>
+                        </div>
+                        <div style={{ width: 100 }}>
+                          <StatusDot status={svc.status} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <InlineMetrics collectors={svc.collectors} />
+                        </div>
+                        <div style={{ minWidth: 80, textAlign: 'right' }}>
+                          {svc.lastUpdated ? (
+                            <span className="text-[11px]" style={{ color: '#555570' }}>
+                              {timeAgo(svc.lastUpdated)}
+                            </span>
+                          ) : null}
+                        </div>
+                      </Link>
+                    )
+                  })}
+                </div>
               )
             })}
           </div>
@@ -345,74 +478,82 @@ export default async function DashboardPage() {
       </section>
 
       {/* ── Recent Alert Events ────────────────────────────────────────────── */}
-      <section>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-semibold" style={{ color: 'var(--foreground)' }}>
+      <section className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-semibold" style={{ color: '#F0F0F5' }}>
             Recent Alert Events
           </h2>
           <Link
             href="/dashboard/history"
-            className="flex items-center gap-1 text-xs transition-colors hover:opacity-80"
-            style={{ color: 'var(--primary)' }}
+            className="text-xs font-medium transition-colors hover:opacity-80"
+            style={{ color: '#10B981' }}
           >
-            View History <ChevronRight className="h-3 w-3" />
+            View History
           </Link>
         </div>
 
-        {recentAlerts.length === 0 ? (
-          <div
-            className="flex items-center gap-3 px-5 py-4 rounded-xl"
-            style={{ background: 'var(--card)', border: '1px solid var(--border)' }}
-          >
-            <CheckCircle2 className="h-4 w-4 flex-shrink-0" style={{ color: 'var(--sp-success)' }} />
-            <span className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
-              No alert events in the last 24 hours
-            </span>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {recentAlerts.map((alert) => {
-              const isError = alert.severity === 'critical'
-              const accentColor = isError ? 'var(--sp-error)' : 'var(--sp-warning)'
-              const accentBg   = isError ? 'var(--sp-error-muted)' : 'var(--sp-warning-muted)'
-              const badge = isError ? 'Critical' : 'Warning'
-              const description = [
+        <div
+          className="rounded-xl overflow-hidden"
+          style={{ background: '#111118', border: '1px solid #1E1E2A' }}
+        >
+          {recentAlerts.length === 0 ? (
+            <div className="flex items-center gap-3 px-5 py-4">
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                style={{ background: '#10B98120' }}
+              >
+                <CheckCircle className="h-4 w-4" style={{ color: '#10B981' }} />
+              </div>
+              <span className="text-sm" style={{ color: '#8888A0' }}>
+                No alert events recently
+              </span>
+            </div>
+          ) : (
+            recentAlerts.map((alert, i) => {
+              const isLast = i === recentAlerts.length - 1
+              const isCritical = alert.severity === 'critical'
+              const accentColor = isCritical ? '#EF4444' : '#F59E0B'
+              const accentBg   = isCritical ? '#EF444420' : '#F59E0B20'
+              const badgeLabel = isCritical ? 'Critical' : 'Warning'
+              const title = formatAlertTitle(
                 alert.serviceLabel,
-                alert.collector_id.replace(/_/g, ' '),
+                alert.collector_id,
                 alert.condition,
-                alert.threshold_numeric !== null ? String(alert.threshold_numeric) : null,
-              ].filter(Boolean).join(' ')
+                alert.threshold_numeric,
+              )
 
               return (
                 <div
                   key={alert.id}
-                  className="flex items-center gap-4 px-5 py-4 rounded-xl"
-                  style={{
-                    background: 'var(--card)',
-                    border: '1px solid var(--border)',
-                    borderLeft: `3px solid ${accentColor}`,
-                  }}
+                  className="flex items-center gap-3.5 px-4 py-3.5"
+                  style={{ borderBottom: isLast ? undefined : '1px solid #1E1E2A' }}
                 >
-                  <AlertOctagon className="h-4 w-4 flex-shrink-0" style={{ color: accentColor }} />
-                  <div className="flex flex-col flex-1 min-w-0">
-                    <span className="text-sm truncate" style={{ color: 'var(--foreground)' }}>
-                      {description}
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                    style={{ background: accentBg }}
+                  >
+                    <TriangleAlert className="h-4 w-4" style={{ color: accentColor }} />
+                  </div>
+                  <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+                    <span className="text-[13px] font-medium truncate" style={{ color: '#F0F0F5' }}>
+                      {title}
                     </span>
-                    <span className="text-xs" style={{ color: 'var(--sp-text-tertiary)' }}>
-                      {timeAgo(alert.notified_at)}
+                    <span className="text-[11px]" style={{ color: '#555570' }}>
+                      Triggered {timeAgo(alert.notified_at)}
+                      {user?.email ? ` • Sent email to ${user.email}` : ''}
                     </span>
                   </div>
                   <span
-                    className="px-2.5 py-1 rounded-full text-xs font-medium flex-shrink-0"
+                    className="rounded-full text-[11px] font-medium flex-shrink-0 px-2 py-0.5"
                     style={{ background: accentBg, color: accentColor }}
                   >
-                    {badge}
+                    {badgeLabel}
                   </span>
                 </div>
               )
-            })}
-          </div>
-        )}
+            })
+          )}
+        </div>
       </section>
 
     </div>
