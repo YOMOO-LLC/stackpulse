@@ -6,7 +6,7 @@ import { ProviderIcon } from '@/components/provider-icon'
 import { MetricSection } from './metric-section'
 import { AlertRulesSection } from './alert-rules-section'
 import { RecentSnapshotsPanel } from './events-section'
-import { DeleteServiceButton } from './delete-service-button'
+import { ServiceActionsMenu } from './service-actions-menu'
 import { SyncButton } from './sync-button'
 import { CredentialReauthBanner } from '@/components/credential-reauth-banner'
 import { ChevronRight } from 'lucide-react'
@@ -74,7 +74,7 @@ export default async function ServiceDetailPage({ params }: PageProps) {
         </div>
         <div className="flex items-center gap-2">
           <SyncButton serviceId={serviceId} />
-          <DeleteServiceButton serviceId={serviceId} />
+          <ServiceActionsMenu serviceId={serviceId} currentLabel={serviceName} />
         </div>
       </div>
 
