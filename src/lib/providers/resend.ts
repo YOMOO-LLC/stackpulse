@@ -63,8 +63,8 @@ export async function fetchResendMetrics(apiKey: string): Promise<ResendMetricRe
       emailsSent24h = recent.length
       const bounced = recent.filter((e: { last_event: string }) => e.last_event === 'bounced').length
       bounceCount = bounced
-      bounceRate = emailsSent24h > 0 ? Math.round((bounced / emailsSent24h) * 1000) / 10 : 0
-      deliveryRate = emailsSent24h > 0 ? Math.round(((emailsSent24h - bounced) / emailsSent24h) * 1000) / 10 : 100
+      bounceRate = recent.length > 0 ? Math.round((bounced / recent.length) * 1000) / 10 : 0
+      deliveryRate = recent.length > 0 ? Math.round(((recent.length - bounced) / recent.length) * 1000) / 10 : 100
       monthlyQuota = emails.length
     }
 

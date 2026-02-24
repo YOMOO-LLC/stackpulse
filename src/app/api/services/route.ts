@@ -24,7 +24,7 @@ async function collectInitialMetrics(
       const r = await fetchOpenRouterMetrics(credentials.apiKey)
       return [{
         collectorId: 'credit_balance',
-        value: r.value ?? null,
+        value: r.creditBalance ?? null,
         valueText: null,
         unit: 'USD',
         status: r.status,
@@ -35,7 +35,7 @@ async function collectInitialMetrics(
       return [{
         collectorId: 'connection_status',
         value: null,
-        valueText: r.value ?? null,
+        valueText: r.status !== 'unknown' ? 'Connected' : null,
         unit: '',
         status: r.status,
       }]
@@ -44,7 +44,7 @@ async function collectInitialMetrics(
       const r = await fetchSentryMetrics(credentials.authToken, credentials.orgSlug)
       return [{
         collectorId: 'error_count',
-        value: r.value ?? null,
+        value: r.unresolvedErrors ?? null,
         valueText: null,
         unit: 'events',
         status: r.status,
