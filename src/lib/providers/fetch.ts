@@ -21,5 +21,8 @@ export async function fetchProviderMetrics(
     console.warn(`[fetchProviderMetrics] Unknown provider: ${providerId}`)
     return []
   }
+  if (credentials.__demo__ === 'true') {
+    return provider.mockFetchMetrics?.() ?? []
+  }
   return provider.fetchMetrics(credentials)
 }
