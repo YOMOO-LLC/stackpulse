@@ -10,6 +10,7 @@ import {
   type ServiceRow, type CollectorRow,
 } from './helpers'
 import { CollapsibleServiceTable } from './collapsible-service-table'
+import { DemoBanner } from '@/components/demo-banner'
 
 type Status = 'healthy' | 'warning' | 'critical' | 'unknown'
 
@@ -136,6 +137,10 @@ export default async function DashboardPage() {
       className="flex flex-col gap-6"
       style={{ padding: '28px 32px', background: 'var(--background)', minHeight: '100%' }}
     >
+
+      {user?.email === process.env.NEXT_PUBLIC_DEMO_EMAIL && (
+        <DemoBanner />
+      )}
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between">

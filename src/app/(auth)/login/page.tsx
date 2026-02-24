@@ -245,6 +245,22 @@ export default function LoginPage() {
             </button>
           </p>
 
+          {/* Divider */}
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
+            <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>or</span>
+            <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
+          </div>
+
+          {/* Try Demo */}
+          <a
+            href="/demo"
+            className="flex items-center justify-center w-full rounded-lg py-2.5 text-sm font-medium transition-opacity hover:opacity-80"
+            style={{ background: '#1A1A2E', border: '1px solid #2D2D4A', color: '#A0A0C0' }}
+          >
+            Try Demo — no sign-up needed
+          </a>
+
         </div>
       </div>
 
