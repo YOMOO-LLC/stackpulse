@@ -1,0 +1,18 @@
+name: Reset Demo Data
+
+on:
+  schedule:
+    - cron: '0 */2 * * *'   # every 2 hours
+  workflow_dispatch:          # manual trigger
+
+jobs:
+  reset:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Reset demo data
+        run: |
+          curl -X POST ${{ vars.NEXT_PUBLIC_APP_URL }}/api/demo/reset \
+            -H "Authorization: Bearer ${{ secrets.DEMO_RESET_SECRET }}" \
+            --fail \
+            --silent \
+            --show-error
