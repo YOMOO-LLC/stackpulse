@@ -2,8 +2,13 @@ import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest'
 import { POST } from '../route'
 import { NextRequest } from 'next/server'
 
-// Mock Supabase
+// Mock session-based Supabase client (anon key)
 vi.mock('@/lib/supabase/server', () => ({
+  createClient: vi.fn(),
+}))
+
+// Mock service-role Supabase client (used for adminSupabase in the route)
+vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn(),
 }))
 
@@ -21,7 +26,9 @@ vi.mock('@/lib/providers/demo-sequences', () => ({
 }))
 
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 const mockCreateClient = vi.mocked(createClient)
+const mockCreateServiceClient = vi.mocked(createServiceClient)
 
 /**
  * Creates a mock Supabase client with chainable query builder methods.
@@ -113,24 +120,30 @@ describe('POST /api/demo/reset', () => {
       ...OLD_ENV,
       DEMO_RESET_SECRET: 'test-secret-abc',
       NEXT_PUBLIC_DEMO_EMAIL: 'demo@stackpulse.io',
+      DEMO_USER_ID: 'demo-user-id',
+      NEXT_PUBLIC_SUPABASE_URL: 'http://localhost:54321',
+      SUPABASE_SERVICE_ROLE_KEY: 'test-service-role-key',
     }
   })
 
   afterAll(() => { process.env = OLD_ENV })
 
-  it('returns 401 when no Authorization header and no session', async () => {
-    const supabase = makeMockSupabase()
+  function setupMocks(overrides: Parameters<typeof makeMockSupabase>[0] = {}) {
+    const supabase = makeMockSupabase(overrides)
     mockCreateClient.mockResolvedValue(supabase as any)
+    mockCreateServiceClient.mockReturnValue(supabase as any)
+    return supabase
+  }
 
+  it('returns 401 when no Authorization header and no session', async () => {
+    setupMocks()
     const req = new NextRequest('http://localhost/api/demo/reset', { method: 'POST' })
     const res = await POST(req)
     expect(res.status).toBe(401)
   })
 
   it('returns 401 when Bearer token is wrong', async () => {
-    const supabase = makeMockSupabase()
-    mockCreateClient.mockResolvedValue(supabase as any)
-
+    setupMocks()
     const req = new NextRequest('http://localhost/api/demo/reset', {
       method: 'POST',
       headers: { Authorization: 'Bearer wrong-secret' },
@@ -140,11 +153,7 @@ describe('POST /api/demo/reset', () => {
   })
 
   it('returns 200 with correct Bearer token', async () => {
-    const supabase = makeMockSupabase({
-      servicesList: { data: [{ id: 'svc-1', provider_id: 'github' }], error: null },
-    })
-    mockCreateClient.mockResolvedValue(supabase as any)
-
+    setupMocks({ servicesList: { data: [{ id: 'svc-1', provider_id: 'github' }], error: null } })
     const req = new NextRequest('http://localhost/api/demo/reset', {
       method: 'POST',
       headers: { Authorization: 'Bearer test-secret-abc' },
@@ -157,12 +166,10 @@ describe('POST /api/demo/reset', () => {
   })
 
   it('returns 200 when authenticated as demo user session', async () => {
-    const supabase = makeMockSupabase({
+    setupMocks({
       getUser: { data: { user: { email: 'demo@stackpulse.io' } } },
       servicesList: { data: [{ id: 'svc-1', provider_id: 'github' }], error: null },
     })
-    mockCreateClient.mockResolvedValue(supabase as any)
-
     const req = new NextRequest('http://localhost/api/demo/reset', { method: 'POST' })
     const res = await POST(req)
     expect(res.status).toBe(200)
@@ -171,11 +178,7 @@ describe('POST /api/demo/reset', () => {
   })
 
   it('returns 200 with message when no demo services found', async () => {
-    const supabase = makeMockSupabase({
-      servicesList: { data: [], error: null },
-    })
-    mockCreateClient.mockResolvedValue(supabase as any)
-
+    setupMocks({ servicesList: { data: [], error: null } })
     const req = new NextRequest('http://localhost/api/demo/reset', {
       method: 'POST',
       headers: { Authorization: 'Bearer test-secret-abc' },
@@ -189,9 +192,7 @@ describe('POST /api/demo/reset', () => {
 
   it('returns 500 when NEXT_PUBLIC_DEMO_EMAIL is not configured', async () => {
     delete process.env.NEXT_PUBLIC_DEMO_EMAIL
-    const supabase = makeMockSupabase()
-    mockCreateClient.mockResolvedValue(supabase as any)
-
+    setupMocks()
     const req = new NextRequest('http://localhost/api/demo/reset', {
       method: 'POST',
       headers: { Authorization: 'Bearer test-secret-abc' },

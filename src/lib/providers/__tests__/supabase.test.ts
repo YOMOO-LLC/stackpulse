@@ -9,39 +9,81 @@ beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
 afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
 
-describe('Supabase Provider', () => {
+const PROJECT_REF = 'abc123ref'
+
+function mockAll({
+  projectsStatus = 200,
+  projects = [{ id: PROJECT_REF, name: 'my-project', status: 'ACTIVE_HEALTHY' }],
+  functions = [{ id: 'fn1' }, { id: 'fn2' }, { id: 'fn3' }],
+  functionsStatus = 200,
+  apiCount = 12480,
+  apiCountStatus = 200,
+  dbRows = [{ count: 24 }],
+  dbStatus = 200,
+} = {}) {
+  server.use(
+    http.get('https://api.supabase.com/v1/projects', () => {
+      if (projectsStatus === 401) return new HttpResponse(null, { status: 401 })
+      if (projectsStatus !== 200) return new HttpResponse(null, { status: projectsStatus })
+      return HttpResponse.json(projects)
+    }),
+    http.get(`https://api.supabase.com/v1/projects/${PROJECT_REF}/functions`, () => {
+      if (functionsStatus !== 200) return new HttpResponse(null, { status: functionsStatus })
+      return HttpResponse.json(functions)
+    }),
+    http.get(`https://api.supabase.com/v1/projects/${PROJECT_REF}/analytics/endpoints/usage.api-requests-count`, () => {
+      if (apiCountStatus !== 200) return new HttpResponse(null, { status: apiCountStatus })
+      return HttpResponse.json({ result: [{ count: apiCount }] })
+    }),
+    http.post(`https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query`, () => {
+      if (dbStatus !== 200) return new HttpResponse(null, { status: dbStatus })
+      return HttpResponse.json(dbRows)
+    }),
+  )
+}
+
+describe('Supabase Provider — metadata', () => {
   it('has correct metadata', () => {
     expect(supabaseProvider.id).toBe('supabase')
     expect(supabaseProvider.category).toBe('infrastructure')
     expect(supabaseProvider.authType).toBe('oauth2')
-    expect(supabaseProvider.collectors.length).toBeGreaterThanOrEqual(1)
+    expect(supabaseProvider.collectors).toHaveLength(4)
   })
 
-  it('collector has displayHint status-badge', () => {
+  it('has connection_status collector with status-badge hint', () => {
     const col = supabaseProvider.collectors.find(c => c.id === 'connection_status')
     expect(col).toBeDefined()
     expect(col?.displayHint).toBe('status-badge')
   })
 
-  it('returns healthy when OAuth access token is valid', async () => {
-    server.use(
-      http.get('https://api.supabase.com/v1/projects', () => {
-        return HttpResponse.json([{ id: 'abc123', name: 'my-project' }])
-      })
-    )
+  it('has api_requests_24h collector', () => {
+    const col = supabaseProvider.collectors.find(c => c.id === 'api_requests_24h')
+    expect(col).toBeDefined()
+    expect(col?.unit).toBe('req')
+  })
 
+  it('has active_db_connections collector', () => {
+    const col = supabaseProvider.collectors.find(c => c.id === 'active_db_connections')
+    expect(col).toBeDefined()
+  })
+
+  it('has edge_function_count collector', () => {
+    const col = supabaseProvider.collectors.find(c => c.id === 'edge_function_count')
+    expect(col).toBeDefined()
+    expect(col?.unit).toBe('functions')
+  })
+})
+
+describe('fetchSupabaseMetrics', () => {
+  it('returns healthy when OAuth access token is valid', async () => {
+    mockAll()
     const result = await fetchSupabaseMetrics('valid-access-token')
     expect(result.status).toBe('healthy')
     expect(result.value).toBe('connected')
   })
 
   it('returns critical on 401 (expired or invalid OAuth token)', async () => {
-    server.use(
-      http.get('https://api.supabase.com/v1/projects', () => {
-        return new HttpResponse(null, { status: 401 })
-      })
-    )
-
+    mockAll({ projectsStatus: 401 })
     const result = await fetchSupabaseMetrics('invalid-access-token')
     expect(result.status).toBe('critical')
     expect(result.value).toBe('auth_failed')
@@ -49,25 +91,85 @@ describe('Supabase Provider', () => {
 
   it('returns unknown on network error', async () => {
     server.use(
-      http.get('https://api.supabase.com/v1/projects', () => {
-        return HttpResponse.error()
-      })
+      http.get('https://api.supabase.com/v1/projects', () => HttpResponse.error()),
     )
-
     const result = await fetchSupabaseMetrics('any-token')
     expect(result.status).toBe('unknown')
   })
 
-  it('fetchMetrics uses access_token from OAuth credentials', async () => {
-    server.use(
-      http.get('https://api.supabase.com/v1/projects', () => {
-        return HttpResponse.json([])
-      })
-    )
+  it('fetches edge function count', async () => {
+    mockAll({ functions: [{ id: 'a' }, { id: 'b' }, { id: 'c' }, { id: 'd' }] })
+    const result = await fetchSupabaseMetrics('token')
+    expect(result.edgeFunctionCount).toBe(4)
+  })
 
+  it('fetches api requests 24h', async () => {
+    mockAll({ apiCount: 9876 })
+    const result = await fetchSupabaseMetrics('token')
+    expect(result.apiRequests24h).toBe(9876)
+  })
+
+  it('fetches active db connections', async () => {
+    mockAll({ dbRows: [{ count: 18 }] })
+    const result = await fetchSupabaseMetrics('token')
+    expect(result.activeDbConnections).toBe(18)
+  })
+
+  it('falls back to null for edge functions on API error', async () => {
+    mockAll({ functionsStatus: 500 })
+    const result = await fetchSupabaseMetrics('token')
+    expect(result.edgeFunctionCount).toBeNull()
+    expect(result.status).toBe('healthy') // connection still healthy
+  })
+
+  it('falls back to null for api requests on API error', async () => {
+    mockAll({ apiCountStatus: 500 })
+    const result = await fetchSupabaseMetrics('token')
+    expect(result.apiRequests24h).toBeNull()
+  })
+
+  it('falls back to null for db connections on API error', async () => {
+    mockAll({ dbStatus: 500 })
+    const result = await fetchSupabaseMetrics('token')
+    expect(result.activeDbConnections).toBeNull()
+  })
+
+  it('handles empty project list', async () => {
+    server.use(
+      http.get('https://api.supabase.com/v1/projects', () => HttpResponse.json([])),
+    )
+    const result = await fetchSupabaseMetrics('token')
+    expect(result.status).toBe('healthy')
+    expect(result.value).toBe('connected')
+    expect(result.edgeFunctionCount).toBeNull()
+    expect(result.apiRequests24h).toBeNull()
+  })
+})
+
+describe('supabaseProvider.fetchMetrics', () => {
+  it('returns snapshots for all 4 collectors', async () => {
+    mockAll()
     const results = await supabaseProvider.fetchMetrics({ access_token: 'oauth-token' })
-    expect(results).toHaveLength(1)
-    expect(results[0].collectorId).toBe('connection_status')
-    expect(results[0].unit).toBe('')
+    expect(results).toHaveLength(4)
+    const ids = results.map(r => r.collectorId)
+    expect(ids).toContain('connection_status')
+    expect(ids).toContain('api_requests_24h')
+    expect(ids).toContain('active_db_connections')
+    expect(ids).toContain('edge_function_count')
+  })
+
+  it('connection_status snapshot has valueText connected', async () => {
+    mockAll()
+    const results = await supabaseProvider.fetchMetrics({ access_token: 'token' })
+    const snap = results.find(r => r.collectorId === 'connection_status')
+    expect(snap?.valueText).toBe('connected')
+    expect(snap?.status).toBe('healthy')
+  })
+
+  it('edge_function_count snapshot has numeric value', async () => {
+    mockAll({ functions: [{ id: 'a' }, { id: 'b' }] })
+    const results = await supabaseProvider.fetchMetrics({ access_token: 'token' })
+    const snap = results.find(r => r.collectorId === 'edge_function_count')
+    expect(snap?.value).toBe(2)
   })
 })
