@@ -1,4 +1,5 @@
 import type { ServiceProvider } from './types'
+import { mockFetchMetrics } from './demo-sequences/resend'
 
 export interface ResendMetricResult {
   emailsSent24h: number | null
@@ -145,6 +146,7 @@ export const resendProvider: ServiceProvider = {
       description: 'Emails sent this month',
     },
   ],
+  mockFetchMetrics,
   alerts: [
     {
       id: 'high-bounce-rate',

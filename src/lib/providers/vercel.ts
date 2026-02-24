@@ -1,4 +1,5 @@
 import type { ServiceProvider } from './types'
+import { mockFetchMetrics } from './demo-sequences/vercel'
 
 export const vercelProvider: ServiceProvider = {
   id: 'vercel',
@@ -40,6 +41,7 @@ export const vercelProvider: ServiceProvider = {
       displayHint: 'number',
     },
   ],
+  mockFetchMetrics,
   alerts: [
     { id: 'deploy-failing', name: 'Deploy Failing', collectorId: 'deployments_24h', condition: 'gt', defaultThreshold: 0, message: 'One or more deployments have errors' },
     { id: 'high-bandwidth', name: 'High Bandwidth', collectorId: 'bandwidth_used', condition: 'gt', defaultThreshold: 80, message: 'Bandwidth usage is above 80 GB' },

@@ -1,4 +1,5 @@
 import type { ServiceProvider } from './types'
+import { mockFetchMetrics } from './demo-sequences/upstash-redis'
 
 export const upstashRedisProvider: ServiceProvider = {
   id: 'upstash-redis',
@@ -18,6 +19,7 @@ export const upstashRedisProvider: ServiceProvider = {
     { id: 'throughput', name: 'Throughput', metricType: 'count', unit: 'ops/s', refreshInterval: 300, description: 'Current operations per second' },
     { id: 'performance_metrics', name: 'Performance Metrics', metricType: 'status', unit: '', refreshInterval: 300, description: 'Detailed performance data (latency, hit rate, keys, DB size)' },
   ],
+  mockFetchMetrics,
   alerts: [
     { id: 'high-memory', name: 'High Memory', collectorId: 'memory_usage_mb', condition: 'gt', defaultThreshold: 200, message: 'Redis memory > 200 MB' },
     { id: 'high-commands', name: 'High Commands', collectorId: 'daily_commands', condition: 'gt', defaultThreshold: 8000, message: 'Daily commands > 8000' },

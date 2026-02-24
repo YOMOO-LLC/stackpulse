@@ -1,4 +1,5 @@
 import type { ServiceProvider } from './types'
+import { mockFetchMetrics } from './demo-sequences/github'
 
 export const githubProvider: ServiceProvider = {
   id: 'github',
@@ -50,6 +51,7 @@ export const githubProvider: ServiceProvider = {
     },
   ],
   metricsLayout: 'stats-grid',
+  mockFetchMetrics,
   alerts: [
     { id: 'rate-limit-low', name: 'Rate Limit Low', collectorId: 'rate_limit_remaining', condition: 'lt', defaultThreshold: 500, message: 'GitHub API rate limit below 500 requests' },
   ],

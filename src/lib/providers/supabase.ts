@@ -1,4 +1,5 @@
 import type { ServiceProvider } from './types'
+import { mockFetchMetrics } from './demo-sequences/supabase'
 
 export const supabaseProvider: ServiceProvider = {
   id: 'supabase',
@@ -19,6 +20,7 @@ export const supabaseProvider: ServiceProvider = {
       description: 'Supabase account connection status',
     },
   ],
+  mockFetchMetrics,
   alerts: [
     {
       id: 'supabase-disconnected',

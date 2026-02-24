@@ -1,4 +1,5 @@
 import type { ServiceProvider } from './types'
+import { mockFetchMetrics } from './demo-sequences/sentry'
 
 export const sentryProvider: ServiceProvider = {
   id: 'sentry',
@@ -49,6 +50,7 @@ export const sentryProvider: ServiceProvider = {
       description: 'P95 transaction latency',
     },
   ],
+  mockFetchMetrics,
   alerts: [
     {
       id: 'high-unresolved',

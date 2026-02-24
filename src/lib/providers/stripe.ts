@@ -1,4 +1,5 @@
 import type { ServiceProvider } from './types'
+import { mockFetchMetrics } from './demo-sequences/stripe'
 
 const ACTIVE_DISPUTE_STATUSES = ['warning_needs_response', 'needs_response', 'under_review']
 
@@ -41,6 +42,7 @@ export const stripeProvider: ServiceProvider = {
       description: 'Number of active subscriptions',
     },
   ],
+  mockFetchMetrics,
   alerts: [
     { id: 'low-balance', name: 'Low Balance', collectorId: 'account_balance', condition: 'lt', defaultThreshold: 100, message: 'Stripe balance below $100' },
     { id: 'active-dispute', name: 'Active Dispute', collectorId: 'active_disputes', condition: 'gt', defaultThreshold: 0, message: 'Active dispute requires attention' },

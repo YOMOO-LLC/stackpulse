@@ -1,4 +1,5 @@
 import type { ServiceProvider } from './types'
+import { mockFetchMetrics } from './demo-sequences/upstash-qstash'
 
 export const upstashQStashProvider: ServiceProvider = {
   id: 'upstash-qstash',
@@ -15,6 +16,7 @@ export const upstashQStashProvider: ServiceProvider = {
     { id: 'dlq_depth', name: 'DLQ Depth', metricType: 'count', unit: 'messages', refreshInterval: 300, thresholds: { warning: 1, critical: 10, direction: 'above' }, description: 'Messages in dead letter queue' },
     { id: 'monthly_quota', name: 'Monthly Quota', metricType: 'percentage', unit: '%', refreshInterval: 300, displayHint: 'progress', thresholds: { warning: 70, critical: 90, direction: 'above', max: 100 }, description: 'Monthly quota consumed %' },
   ],
+  mockFetchMetrics,
   alerts: [
     { id: 'dlq-depth', name: 'DLQ Depth', collectorId: 'dlq_depth', condition: 'gt', defaultThreshold: 0, message: 'Messages in dead letter queue' },
     { id: 'high-quota', name: 'High Quota', collectorId: 'monthly_quota', condition: 'gt', defaultThreshold: 80, message: 'QStash quota > 80%' },

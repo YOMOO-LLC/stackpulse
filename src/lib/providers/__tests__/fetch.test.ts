@@ -112,3 +112,15 @@ describe('fetchProviderMetrics — demo sentinel', () => {
     expect(mockFetch).not.toHaveBeenCalled()
   })
 })
+
+describe('fetchProviderMetrics — demo sentinel integration (real providers)', () => {
+  it('github provider has mockFetchMetrics registered', async () => {
+    // Import the providers index to trigger registerProvider calls
+    await import('../../providers/index')
+    const { getProvider } = await import('../registry')
+    const provider = getProvider('github')
+    expect(provider?.mockFetchMetrics).toBeDefined()
+    const results = await provider!.mockFetchMetrics!()
+    expect(results.some((r) => r.collectorId === 'rate_limit_remaining')).toBe(true)
+  })
+})

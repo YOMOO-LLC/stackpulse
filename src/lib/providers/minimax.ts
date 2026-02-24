@@ -1,4 +1,5 @@
 import type { ServiceProvider } from './types'
+import { mockFetchMetrics } from './demo-sequences/minimax'
 
 export interface MinimaxMetricResult {
   connectionStatus: string | null
@@ -110,6 +111,7 @@ export const minimaxProvider: ServiceProvider = {
       displayHint: 'number',
     },
   ],
+  mockFetchMetrics,
   alerts: [
     {
       id: 'minimax-disconnected',

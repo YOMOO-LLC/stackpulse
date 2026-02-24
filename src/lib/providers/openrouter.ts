@@ -1,4 +1,5 @@
 import type { ServiceProvider } from './types'
+import { mockFetchMetrics } from './demo-sequences/openrouter'
 
 export interface OpenRouterMetricResult {
   creditBalance: number | null
@@ -94,6 +95,7 @@ export const openrouterProvider: ServiceProvider = {
       description: 'Distinct models used this month',
     },
   ],
+  mockFetchMetrics,
   alerts: [
     {
       id: 'low-credits',

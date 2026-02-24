@@ -1,4 +1,5 @@
 import type { ServiceProvider } from './types'
+import { mockFetchMetrics } from './demo-sequences/openai'
 
 export const openaiProvider: ServiceProvider = {
   id: 'openai',
@@ -50,6 +51,7 @@ export const openaiProvider: ServiceProvider = {
       description: 'Per-model request and cost breakdown (JSON)',
     },
   ],
+  mockFetchMetrics,
   alerts: [
     { id: 'low-credits', name: 'Low Credits', collectorId: 'credit_balance', condition: 'lt', defaultThreshold: 5, message: 'OpenAI credits below $5' },
     { id: 'high-usage', name: 'High Usage', collectorId: 'monthly_usage', condition: 'gt', defaultThreshold: 50, message: 'OpenAI monthly usage > $50' },
