@@ -40,21 +40,35 @@ async function main() {
   console.log('Seeding demo account...')
 
   // 1. Create or find demo user
-  const { data: listData } = await supabase.auth.admin.listUsers()
-  let demoUser = listData?.users.find((u) => u.email === DEMO_EMAIL)
+  console.log(`  Creating user ${DEMO_EMAIL}...`)
+  const { data: createData, error: createErr } = await supabase.auth.admin.createUser({
+    email: DEMO_EMAIL,
+    password: DEMO_PASSWORD,
+    email_confirm: true,
+  })
 
-  if (!demoUser) {
-    console.log(`  Creating user ${DEMO_EMAIL}...`)
-    const { data, error } = await supabase.auth.admin.createUser({
-      email: DEMO_EMAIL,
-      password: DEMO_PASSWORD,
-      email_confirm: true,
-    })
-    if (error) throw new Error(`Failed to create demo user: ${error.message}`)
-    demoUser = data.user
-    console.log(`  Created user ${demoUser.id}`)
+  let demoUser = createData?.user ?? null
+
+  if (createErr) {
+    const msg = createErr.message ?? JSON.stringify(createErr)
+    if (!msg.includes('already been registered') && !msg.includes('already registered') && !msg.includes('already exists')) {
+      throw new Error(`Failed to create demo user: ${msg} | ${JSON.stringify(createErr)}`)
+    }
+    // User already exists — look up by paginating admin listUsers
+    console.log(`  User already exists, looking up...`)
+    let found = false
+    let page = 1
+    while (!found) {
+      const { data: pageData, error: pageErr } = await supabase.auth.admin.listUsers({ page, perPage: 50 })
+      if (pageErr) throw new Error(`listUsers failed: ${pageErr.message}`)
+      const match = pageData?.users.find((u) => u.email === DEMO_EMAIL)
+      if (match) { demoUser = match; found = true; break }
+      if (!pageData?.users.length) throw new Error(`Cannot find existing demo user after pagination`)
+      page++
+    }
+    console.log(`  Found existing user ${demoUser!.id}`)
   } else {
-    console.log(`  Found existing user ${demoUser.id}`)
+    console.log(`  Created user ${demoUser!.id}`)
   }
 
   const userId = demoUser.id
@@ -62,26 +76,29 @@ async function main() {
   // 2. Sentinel credentials (AES-encrypted)
   const sentinelCredentials = encrypt(JSON.stringify({ __demo__: 'true' }), ENCRYPTION_KEY)
 
-  // 3. Insert connected_services rows (upsert by user_id + provider_id)
-  for (const seq of ALL_DEMO_SEQUENCES) {
-    const { error } = await supabase.from('connected_services').upsert(
-      {
-        user_id: userId,
-        provider_id: seq.providerId,
-        label: null,
-        enabled: true,
-        credentials: sentinelCredentials,
-        consecutive_failures: 0,
-        auth_expired: false,
-      },
-      { onConflict: 'user_id,provider_id' }
-    )
-    if (error) {
-      console.error(`  Failed to upsert ${seq.providerId}: ${error.message}`)
-    } else {
-      console.log(`  Upserted ${seq.providerId}`)
-    }
+  // 3. Delete existing connected_services for demo user (idempotent re-seed)
+  const { error: delErr } = await supabase
+    .from('connected_services')
+    .delete()
+    .eq('user_id', userId)
+  if (delErr) console.warn(`  Warning: could not delete existing services: ${delErr.message}`)
+
+  // 4. Insert connected_services rows
+  const rows = ALL_DEMO_SEQUENCES.map((seq) => ({
+    user_id: userId,
+    provider_id: seq.providerId,
+    label: null,
+    enabled: true,
+    credentials: sentinelCredentials,
+    consecutive_failures: 0,
+    auth_expired: false,
+  }))
+
+  const { error: insErr } = await supabase.from('connected_services').insert(rows)
+  if (insErr) {
+    throw new Error(`Failed to insert connected_services: ${insErr.message}`)
   }
+  console.log(`  Inserted ${rows.length} connected_services`)
 
   // 4. Seed initial metric data via reset endpoint
   console.log('  Calling /api/demo/reset to seed metric data...')
@@ -98,8 +115,12 @@ async function main() {
   const body = await res.json()
   console.log(`  Demo data seeded at ${body.reset_at}`)
   console.log('Demo account ready!')
-  console.log(`  Email: ${DEMO_EMAIL}`)
-  console.log(`  Entry: ${APP_URL}/demo`)
+  console.log(`  Email:    ${DEMO_EMAIL}`)
+  console.log(`  Entry:    ${APP_URL}/demo`)
+  console.log(`  User ID:  ${demoUser!.id}`)
+  console.log()
+  console.log('ACTION REQUIRED: Add to your environment variables:')
+  console.log(`  DEMO_USER_ID=${demoUser!.id}`)
 }
 
 main().catch((err) => {
