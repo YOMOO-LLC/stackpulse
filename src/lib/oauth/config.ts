@@ -6,6 +6,7 @@ export interface OAuthProviderConfig {
   scopes: string[]
   redirectUri: string
   supportsRefresh: boolean
+  requiresPKCE: boolean
 }
 
 function getAppUrl(): string {
@@ -24,15 +25,17 @@ export function getOAuthConfig(providerId: string): OAuthProviderConfig | null {
       scopes: ['user'],
       redirectUri: `${appUrl}/api/oauth/callback/github`,
       supportsRefresh: false,
+      requiresPKCE: false,
     },
     vercel: {
       clientId: process.env.VERCEL_CLIENT_ID ?? '',
       clientSecret: process.env.VERCEL_CLIENT_SECRET ?? '',
       authorizationUrl: 'https://vercel.com/oauth/authorize',
-      tokenUrl: 'https://api.vercel.com/v2/oauth/access_token',
+      tokenUrl: 'https://api.vercel.com/login/oauth/token',
       scopes: [],
       redirectUri: `${appUrl}/api/oauth/callback/vercel`,
       supportsRefresh: false,
+      requiresPKCE: true,
     },
     sentry: {
       clientId: process.env.SENTRY_CLIENT_ID ?? '',
@@ -42,15 +45,17 @@ export function getOAuthConfig(providerId: string): OAuthProviderConfig | null {
       scopes: ['project:read', 'org:read', 'event:read'],
       redirectUri: `${appUrl}/api/oauth/callback/sentry`,
       supportsRefresh: true,
+      requiresPKCE: false,
     },
     supabase: {
       clientId: process.env.SUPABASE_CLIENT_ID ?? '',
       clientSecret: process.env.SUPABASE_CLIENT_SECRET ?? '',
       authorizationUrl: 'https://api.supabase.com/v1/oauth/authorize',
       tokenUrl: 'https://api.supabase.com/v1/oauth/token',
-      scopes: [],
+      scopes: ['edge_functions:read'],
       redirectUri: `${appUrl}/api/oauth/callback/supabase`,
       supportsRefresh: true,
+      requiresPKCE: false,
     },
   }
 
