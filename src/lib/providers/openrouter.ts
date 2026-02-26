@@ -27,13 +27,25 @@ export async function fetchOpenRouterMetrics(apiKey: string): Promise<OpenRouter
     let requests24h: number | null = null
     let modelsUsed: number | null = null
     try {
-      const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-      const genRes = await fetch(`https://openrouter.ai/api/v1/generation?date_min=${since}&limit=1000`, { headers })
-      if (genRes.ok) {
-        const genJson = await genRes.json()
-        const generations = genJson.data ?? []
-        requests24h = generations.length
-        const models = new Set<string>(generations.map((g: { model: string }) => g.model))
+      const activityRes = await fetch('https://openrouter.ai/api/v1/activity', { headers })
+      if (activityRes.ok) {
+        const activityJson = await activityRes.json()
+        const items: { date: string; model: string; requests: number }[] = activityJson.data ?? []
+
+        // requests_24h: sum requests for today (UTC)
+        const todayUTC = new Date().toISOString().slice(0, 10)
+        requests24h = 0
+        for (const item of items) {
+          if (item.date === todayUTC) {
+            requests24h += item.requests ?? 0
+          }
+        }
+
+        // models_used: distinct models across all returned data (last 30 days)
+        const models = new Set<string>()
+        for (const item of items) {
+          if (item.model) models.add(item.model)
+        }
         modelsUsed = models.size
       }
     } catch { /* non-fatal */ }
