@@ -1,36 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getProvider } from '@/lib/providers'
-import { fetchOpenRouterMetrics } from '@/lib/providers/openrouter'
-import { fetchSentryMetrics } from '@/lib/providers/sentry'
-import { fetchResendMetrics } from '@/lib/providers/resend'
-import { fetchVercelMetrics } from '@/lib/providers/vercel'
-
-async function validateCredentials(
-  providerId: string,
-  credentials: Record<string, string>
-): Promise<{ valid: boolean; status: string }> {
-  switch (providerId) {
-    case 'openrouter': {
-      const result = await fetchOpenRouterMetrics(credentials.apiKey)
-      return { valid: result.status !== 'unknown', status: result.status }
-    }
-    case 'sentry': {
-      const result = await fetchSentryMetrics(credentials.authToken, credentials.orgSlug)
-      return { valid: result.status !== 'unknown', status: result.status }
-    }
-    case 'resend': {
-      const result = await fetchResendMetrics(credentials.apiKey)
-      return { valid: result.status !== 'unknown', status: result.status }
-    }
-    case 'vercel': {
-      const result = await fetchVercelMetrics(credentials.token)
-      return { valid: result.status !== 'unknown', status: result.status }
-    }
-    default:
-      return { valid: false, status: 'unknown' }
-  }
-}
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
@@ -46,7 +16,12 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const result = await validateCredentials(providerId, credentials)
+    const results = await provider.fetchMetrics(credentials)
+    const hasHealthy = results.some(r => r.status !== 'unknown')
+    const bestStatus = hasHealthy
+      ? (results.find(r => r.status === 'healthy')?.status ?? results[0]?.status ?? 'unknown')
+      : 'unknown'
+    const result = { valid: hasHealthy, status: bestStatus }
     console.log('[validate]', providerId, result)
     return NextResponse.json(result)
   } catch (err) {
