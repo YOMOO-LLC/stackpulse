@@ -1,4 +1,4 @@
-import type { ServiceProvider } from './types'
+import type { ServiceProvider, ProjectOption } from './types'
 import { mockFetchMetrics } from './demo-sequences/supabase'
 
 export const supabaseProvider: ServiceProvider = {
@@ -30,14 +30,42 @@ export const supabaseProvider: ServiceProvider = {
       endpoint: '/v1/projects',
       displayHint: 'status-badge',
       description: 'Supabase account connection status',
+      section: 'header',
     },
     {
-      id: 'api_requests_24h',
-      name: 'API Requests (24h)',
+      id: 'db_requests_24h',
+      name: 'Database Requests (24h)',
       metricType: 'count',
       unit: 'req',
       refreshInterval: 300,
-      description: 'Total API requests in the last 24 hours',
+      description: 'Database (REST) requests in the last 24 hours',
+      trend: true,
+    },
+    {
+      id: 'auth_requests_24h',
+      name: 'Auth Requests (24h)',
+      metricType: 'count',
+      unit: 'req',
+      refreshInterval: 300,
+      description: 'Auth requests in the last 24 hours',
+      trend: true,
+    },
+    {
+      id: 'storage_requests_24h',
+      name: 'Storage Requests (24h)',
+      metricType: 'count',
+      unit: 'req',
+      refreshInterval: 300,
+      description: 'Storage requests in the last 24 hours',
+      trend: true,
+    },
+    {
+      id: 'realtime_requests_24h',
+      name: 'Realtime Requests (24h)',
+      metricType: 'count',
+      unit: 'req',
+      refreshInterval: 300,
+      description: 'Realtime requests in the last 24 hours',
       trend: true,
     },
     {
@@ -73,6 +101,7 @@ export const supabaseProvider: ServiceProvider = {
       refreshInterval: 300,
       displayHint: 'status-badge',
       description: 'Database service health',
+      section: 'health',
     },
     {
       id: 'auth_health',
@@ -82,6 +111,7 @@ export const supabaseProvider: ServiceProvider = {
       refreshInterval: 300,
       displayHint: 'status-badge',
       description: 'Auth service health',
+      section: 'health',
     },
     {
       id: 'realtime_health',
@@ -91,6 +121,7 @@ export const supabaseProvider: ServiceProvider = {
       refreshInterval: 300,
       displayHint: 'status-badge',
       description: 'Realtime service health',
+      section: 'health',
     },
     {
       id: 'storage_health',
@@ -100,9 +131,18 @@ export const supabaseProvider: ServiceProvider = {
       refreshInterval: 300,
       displayHint: 'status-badge',
       description: 'Storage service health',
+      section: 'health',
     },
   ],
   mockFetchMetrics,
+  projectSelector: {
+    key: 'project_ref',
+    label: 'Select Project',
+    fetch: async (credentials) => {
+      const token = credentials.token ?? credentials.access_token ?? ''
+      return fetchSupabaseProjects(token)
+    },
+  },
   alerts: [
     {
       id: 'supabase-disconnected',
@@ -131,7 +171,7 @@ export const supabaseProvider: ServiceProvider = {
   ],
   fetchMetrics: async (credentials) => {
     const token = credentials.token ?? credentials.access_token ?? ''
-    const r = await fetchSupabaseMetrics(token)
+    const r = await fetchSupabaseMetrics(token, credentials.project_ref)
     const base = r.status === 'critical' ? 'critical' : 'healthy'
 
     function healthStatus(val: string | null): string {
@@ -141,7 +181,10 @@ export const supabaseProvider: ServiceProvider = {
 
     return [
       { collectorId: 'connection_status', value: null, valueText: r.value ?? null, unit: '', status: r.status },
-      { collectorId: 'api_requests_24h', value: r.apiRequests24h ?? null, valueText: null, unit: 'req', status: base },
+      { collectorId: 'db_requests_24h', value: r.dbRequests24h ?? null, valueText: null, unit: 'req', status: base },
+      { collectorId: 'auth_requests_24h', value: r.authRequests24h ?? null, valueText: null, unit: 'req', status: base },
+      { collectorId: 'storage_requests_24h', value: r.storageRequests24h ?? null, valueText: null, unit: 'req', status: base },
+      { collectorId: 'realtime_requests_24h', value: r.realtimeRequests24h ?? null, valueText: null, unit: 'req', status: base },
       { collectorId: 'active_db_connections', value: r.activeDbConnections ?? null, valueText: null, unit: '', status: base },
       { collectorId: 'disk_usage_bytes', value: r.diskUsageBytes ?? null, valueText: null, unit: 'bytes', status: base },
       { collectorId: 'edge_function_count', value: r.edgeFunctionCount ?? null, valueText: null, unit: 'functions', status: base },
@@ -156,7 +199,10 @@ export const supabaseProvider: ServiceProvider = {
 export interface SupabaseMetricResult {
   status: 'healthy' | 'critical' | 'unknown'
   value?: string
-  apiRequests24h: number | null
+  dbRequests24h: number | null
+  authRequests24h: number | null
+  storageRequests24h: number | null
+  realtimeRequests24h: number | null
   activeDbConnections: number | null
   diskUsageBytes: number | null
   edgeFunctionCount: number | null
@@ -170,7 +216,10 @@ export interface SupabaseMetricResult {
 
 const NULL_RESULT: SupabaseMetricResult = {
   status: 'unknown',
-  apiRequests24h: null,
+  dbRequests24h: null,
+  authRequests24h: null,
+  storageRequests24h: null,
+  realtimeRequests24h: null,
   activeDbConnections: null,
   diskUsageBytes: null,
   edgeFunctionCount: null,
@@ -180,11 +229,19 @@ const NULL_RESULT: SupabaseMetricResult = {
   storageHealth: null,
 }
 
-export async function fetchSupabaseMetrics(accessToken: string): Promise<SupabaseMetricResult> {
+export async function fetchSupabaseProjects(accessToken: string): Promise<ProjectOption[]> {
+  const headers = { Authorization: `Bearer ${accessToken}` }
+  const res = await fetch('https://api.supabase.com/v1/projects', { headers })
+  if (!res.ok) return []
+  const projects: { id: string; name: string; status: string }[] = await res.json()
+  return projects.map((p) => ({ value: p.id, label: p.name }))
+}
+
+export async function fetchSupabaseMetrics(accessToken: string, projectRef?: string): Promise<SupabaseMetricResult> {
   const headers = { Authorization: `Bearer ${accessToken}` }
 
   try {
-    // 1. Connection check + get first project ref
+    // 1. Connection check + resolve project ref
     const projectsRes = await fetch('https://api.supabase.com/v1/projects', { headers })
 
     if (projectsRes.status === 401 || projectsRes.status === 403) {
@@ -195,13 +252,17 @@ export async function fetchSupabaseMetrics(accessToken: string): Promise<Supabas
     }
 
     const projects: { id: string; name: string; status: string }[] = await projectsRes.json()
-    const firstProject = projects[0]
 
-    if (!firstProject) {
+    // Use provided projectRef, otherwise fall back to first project
+    const matchedProject = projectRef
+      ? projects.find((p) => p.id === projectRef)
+      : projects[0]
+
+    if (!matchedProject) {
       return { ...NULL_RESULT, value: 'connected', status: 'healthy' }
     }
 
-    const ref = firstProject.id
+    const ref = matchedProject.id
 
     // 2. Edge functions
     let edgeFunctionCount: number | null = null
@@ -213,17 +274,32 @@ export async function fetchSupabaseMetrics(accessToken: string): Promise<Supabas
       }
     } catch { /* leave null */ }
 
-    // 3. API requests (24h)
-    let apiRequests24h: number | null = null
+    // 3. API request counts by service (24h)
+    let dbRequests24h: number | null = null
+    let authRequests24h: number | null = null
+    let storageRequests24h: number | null = null
+    let realtimeRequests24h: number | null = null
     try {
       const res = await fetch(
-        `https://api.supabase.com/v1/projects/${ref}/analytics/endpoints/usage.api-requests-count`,
+        `https://api.supabase.com/v1/projects/${ref}/analytics/endpoints/usage.api-counts?interval=1day`,
         { headers },
       )
       if (res.ok) {
+        type ApiCountRow = { total_rest_requests?: number; total_auth_requests?: number; total_storage_requests?: number; total_realtime_requests?: number }
         const data = await res.json()
-        const count = data?.result?.[0]?.count
-        apiRequests24h = typeof count === 'number' ? count : null
+        // Handle both bare array and { result: [...] } wrapper
+        const rows: ApiCountRow[] = Array.isArray(data) ? data : (Array.isArray(data?.result) ? data.result : [])
+        let dbReq = 0, authReq = 0, storageReq = 0, realtimeReq = 0
+        for (const row of rows) {
+          dbReq += row.total_rest_requests ?? 0
+          authReq += row.total_auth_requests ?? 0
+          storageReq += row.total_storage_requests ?? 0
+          realtimeReq += row.total_realtime_requests ?? 0
+        }
+        dbRequests24h = dbReq
+        authRequests24h = authReq
+        storageRequests24h = storageReq
+        realtimeRequests24h = realtimeReq
       }
     } catch { /* leave null */ }
 
@@ -276,7 +352,10 @@ export async function fetchSupabaseMetrics(accessToken: string): Promise<Supabas
     return {
       value: 'connected',
       status: 'healthy',
-      apiRequests24h,
+      dbRequests24h,
+      authRequests24h,
+      storageRequests24h,
+      realtimeRequests24h,
       activeDbConnections,
       diskUsageBytes,
       edgeFunctionCount,
