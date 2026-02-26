@@ -104,6 +104,15 @@ export const resendProvider: ServiceProvider = {
   credentials: [
     { key: 'apiKey', label: 'API Key', type: 'password', required: true },
   ],
+  keyGuide: {
+    url: 'https://resend.com/api-keys',
+    steps: [
+      'Go to resend.com and sign in to your account.',
+      'Navigate to API Keys in the left sidebar.',
+      'Click "Create API Key", choose a name and permission level.',
+      'Copy the generated key — it starts with re_...',
+    ],
+  },
   collectors: [
     {
       id: 'emails_sent_24h',

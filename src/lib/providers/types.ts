@@ -53,6 +53,11 @@ export interface AlertTemplate {
   message: string
 }
 
+export interface KeyGuide {
+  url: string
+  steps: string[]
+}
+
 export interface ServiceProvider {
   id: string
   name: string
@@ -65,6 +70,7 @@ export interface ServiceProvider {
   fetchMetrics: (credentials: Record<string, string>) => Promise<SnapshotResult[]>
   mockFetchMetrics?: () => Promise<SnapshotResult[]>
   metricsLayout?: 'cards' | 'stats-grid'
+  keyGuide?: KeyGuide
 }
 
 export const VALID_METRIC_TYPES: MetricType[] = ['currency', 'percentage', 'count', 'status', 'boolean']

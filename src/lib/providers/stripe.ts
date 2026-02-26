@@ -12,6 +12,16 @@ export const stripeProvider: ServiceProvider = {
   credentials: [
     { key: 'apiKey', label: 'Restricted API Key', type: 'password', required: true, placeholder: 'rk_live_...' },
   ],
+  keyGuide: {
+    url: 'https://dashboard.stripe.com/apikeys',
+    steps: [
+      'Go to dashboard.stripe.com and sign in.',
+      'Navigate to Developers → API Keys.',
+      'Click "Create restricted key" for production use.',
+      'Grant read access to Balance, Charges, Disputes, and Subscriptions.',
+      'Copy the key — it starts with rk_live_...',
+    ],
+  },
   collectors: [
     {
       id: 'account_balance',

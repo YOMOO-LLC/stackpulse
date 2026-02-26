@@ -10,6 +10,15 @@ export const openaiProvider: ServiceProvider = {
   credentials: [
     { key: 'apiKey', label: 'API Key', type: 'password', required: true, placeholder: 'sk-...' },
   ],
+  keyGuide: {
+    url: 'https://platform.openai.com/api-keys',
+    steps: [
+      'Go to platform.openai.com and sign in.',
+      'Navigate to API Keys in the left sidebar.',
+      'Click "Create new secret key" and give it a name.',
+      'Copy the key — it starts with sk-...',
+    ],
+  },
   collectors: [
     {
       id: 'credit_balance',

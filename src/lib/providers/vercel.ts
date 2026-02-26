@@ -10,6 +10,15 @@ export const vercelProvider: ServiceProvider = {
   credentials: [
     { key: 'token', label: 'API Token', type: 'password', required: true, placeholder: 'vercel_...' },
   ],
+  keyGuide: {
+    url: 'https://vercel.com/account/tokens',
+    steps: [
+      'Go to vercel.com and sign in to your account.',
+      'Navigate to Settings → Tokens.',
+      'Click "Create" and set a name and scope.',
+      'Copy the generated token — it starts with vercel_...',
+    ],
+  },
   collectors: [
     {
       id: 'deployments_24h',

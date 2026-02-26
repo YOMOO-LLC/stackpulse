@@ -3,12 +3,21 @@
 import { Suspense, use, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, ExternalLink, KeyRound } from 'lucide-react'
 import { getProvider } from '@/lib/providers'
 import { ProviderIcon } from '@/components/provider-icon'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 
 export default function ConnectProviderPage(props: { params: Promise<{ providerId: string }> }) {
   return (
@@ -195,6 +204,47 @@ function ConnectProviderPageInner({
                 />
               </div>
             ))}
+
+            {provider.keyGuide && (
+              <Dialog>
+                <DialogTrigger asChild>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition-colors"
+                  >
+                    <KeyRound className="h-3.5 w-3.5" />
+                    How do I get a key?
+                  </button>
+                </DialogTrigger>
+                <DialogContent className="bg-card border-border">
+                  <DialogHeader>
+                    <div className="flex items-center gap-3">
+                      <ProviderIcon providerId={providerId} size={32} />
+                      <div>
+                        <DialogTitle className="text-foreground">Get your {provider.name} key</DialogTitle>
+                        <DialogDescription>Follow these steps to generate an API key</DialogDescription>
+                      </div>
+                    </div>
+                  </DialogHeader>
+                  <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground py-2">
+                    {provider.keyGuide.steps.map((step, i) => (
+                      <li key={i} className="leading-relaxed">{step}</li>
+                    ))}
+                  </ol>
+                  <DialogFooter>
+                    <Button
+                      asChild
+                      className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                    >
+                      <a href={provider.keyGuide.url} target="_blank" rel="noopener noreferrer">
+                        Open {provider.name} Dashboard
+                        <ExternalLink className="h-3.5 w-3.5 ml-1.5" />
+                      </a>
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            )}
 
             {errorMsg && (
               <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-3 py-2">

@@ -72,6 +72,15 @@ export const minimaxProvider: ServiceProvider = {
   credentials: [
     { key: 'apiKey', label: 'API Key', type: 'password', required: true },
   ],
+  keyGuide: {
+    url: 'https://platform.minimaxi.com/user-center/basic-information/interface-key',
+    steps: [
+      'Go to platform.minimaxi.com and sign in.',
+      'Navigate to User Center → Interface Key.',
+      'Click "Create" to generate a new API key.',
+      'Copy the generated key.',
+    ],
+  },
   collectors: [
     {
       id: 'connection_status',

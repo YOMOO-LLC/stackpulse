@@ -12,6 +12,15 @@ export const upstashRedisProvider: ServiceProvider = {
     { key: 'apiKey', label: 'API Key', type: 'password', required: true, placeholder: 'upstash_redis_...' },
     { key: 'databaseId', label: 'Database ID', type: 'text', required: true, placeholder: 'xxxxxxxx-xxxx-...' },
   ],
+  keyGuide: {
+    url: 'https://console.upstash.com/',
+    steps: [
+      'Go to console.upstash.com and sign in.',
+      'Navigate to your Redis database, or create one.',
+      'Under the Details tab, find your REST API credentials.',
+      'You need: your account email, API key, and the Database ID (UUID shown in the URL).',
+    ],
+  },
   collectors: [
     { id: 'daily_commands', name: 'Daily Commands', metricType: 'count', unit: 'commands', refreshInterval: 300, description: 'Redis commands executed today', trend: true },
     { id: 'memory_usage_mb', name: 'Memory Usage', metricType: 'count', unit: 'MB', refreshInterval: 300, displayHint: 'number', description: 'Memory in use (MB)' },

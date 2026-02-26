@@ -54,6 +54,15 @@ export const openrouterProvider: ServiceProvider = {
   credentials: [
     { key: 'apiKey', label: 'API Key', type: 'password', required: true },
   ],
+  keyGuide: {
+    url: 'https://openrouter.ai/keys',
+    steps: [
+      'Go to openrouter.ai and sign in to your account.',
+      'Navigate to Keys in the left sidebar.',
+      'Click "Create Key" and give it a name.',
+      'Copy the generated API key — it starts with sk-or-...',
+    ],
+  },
   collectors: [
     {
       id: 'credit_balance',

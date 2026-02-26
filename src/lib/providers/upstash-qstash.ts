@@ -10,6 +10,15 @@ export const upstashQStashProvider: ServiceProvider = {
   credentials: [
     { key: 'token', label: 'QStash Token', type: 'password', required: true, placeholder: 'qstash_...' },
   ],
+  keyGuide: {
+    url: 'https://console.upstash.com/qstash',
+    steps: [
+      'Go to console.upstash.com and sign in.',
+      'Navigate to QStash in the top navigation.',
+      'Your QStash token is shown on the main page.',
+      'Copy the token — it starts with qstash_...',
+    ],
+  },
   collectors: [
     { id: 'messages_delivered', name: 'Messages Delivered', metricType: 'count', unit: 'messages', refreshInterval: 300, description: 'Messages delivered this month', trend: true },
     { id: 'messages_failed', name: 'Messages Failed', metricType: 'count', unit: 'messages', refreshInterval: 300, thresholds: { warning: 5, critical: 20, direction: 'above' }, description: 'Failed deliveries this month', trend: true },

@@ -10,6 +10,16 @@ export const supabaseProvider: ServiceProvider = {
   credentials: [
     { key: 'token', label: 'Personal Access Token', type: 'password', required: true, placeholder: 'sbp_...' },
   ],
+  keyGuide: {
+    url: 'https://supabase.com/dashboard/account/tokens',
+    steps: [
+      'Go to supabase.com/dashboard and sign in.',
+      'Click your avatar (bottom left) → Account Preferences.',
+      'Navigate to Access Tokens.',
+      'Click "Generate new token", give it a name.',
+      'Copy the token — it starts with sbp_...',
+    ],
+  },
   collectors: [
     {
       id: 'connection_status',
