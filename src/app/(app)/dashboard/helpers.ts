@@ -20,6 +20,7 @@ export type ServiceRow = {
   providerName: string
   label: string
   status: Status
+  authExpired?: boolean
   collectors: CollectorRow[]
   lastUpdated: string | undefined
 }

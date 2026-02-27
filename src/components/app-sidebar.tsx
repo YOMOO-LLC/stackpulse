@@ -3,9 +3,10 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
-  LayoutDashboard, Server, Bell, Plug, Clock, Settings2, LogOut,
+  LayoutDashboard, Server, Bell, Plug, Clock, Settings2, LogOut, Zap,
 } from 'lucide-react'
 import { signOut } from '@/app/(auth)/login/actions'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 type Status = 'healthy' | 'warning' | 'critical' | 'unknown'
 
@@ -40,19 +41,19 @@ export function AppSidebar({ userEmail, alertCount = 0 }: AppSidebarProps) {
 
   return (
     <aside
-      className="w-56 shrink-0 flex flex-col h-screen sticky top-0"
-      style={{ background: '#08080C', borderRight: '1px solid var(--border)' }}
+      className="w-[260px] shrink-0 flex flex-col h-screen sticky top-0"
+      style={{ background: 'var(--sidebar)', borderRight: '1px solid var(--border)' }}
     >
       {/* Logo */}
       <div className="px-5 py-5">
         <Link href="/dashboard" className="flex items-center gap-2 group">
           <span
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold flex-shrink-0"
+            className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
             style={{ background: 'var(--primary)', color: 'var(--primary-foreground)' }}
           >
-            SP
+            <Zap className="h-[18px] w-[18px]" />
           </span>
-          <span className="font-semibold text-sm" style={{ color: 'var(--foreground)' }}>
+          <span className="font-bold text-lg" style={{ color: 'var(--foreground)', letterSpacing: '-0.5px' }}>
             StackPulse
           </span>
         </Link>
@@ -67,7 +68,7 @@ export function AppSidebar({ userEmail, alertCount = 0 }: AppSidebarProps) {
             <Link
               key={label}
               href={href}
-              className="flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors"
+              className="flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-colors"
               style={{
                 color:      active ? 'var(--primary)' : 'var(--muted-foreground)',
                 background: active ? 'var(--sp-success-muted)' : 'transparent',
@@ -80,7 +81,7 @@ export function AppSidebar({ userEmail, alertCount = 0 }: AppSidebarProps) {
               {showBadge && (
                 <span
                   className="flex items-center justify-center text-[10px] font-bold min-w-[18px] h-[18px] rounded-full px-1"
-                  style={{ background: 'var(--sp-error)', color: '#fff' }}
+                  style={{ background: 'var(--sp-error)', color: 'var(--card)' }}
                 >
                   {alertCount > 99 ? '99+' : alertCount}
                 </span>
@@ -109,11 +110,12 @@ export function AppSidebar({ userEmail, alertCount = 0 }: AppSidebarProps) {
             Free Plan
           </span>
         </div>
+        <ThemeToggle />
         <form action={signOut}>
           <button
             type="submit"
             className="transition-colors"
-            style={{ color: 'var(--sp-text-tertiary)' }}
+            style={{ color: 'var(--muted-foreground)' }}
             aria-label="Sign out"
           >
             <LogOut className="h-3.5 w-3.5" />
