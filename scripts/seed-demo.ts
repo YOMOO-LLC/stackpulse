@@ -71,7 +71,7 @@ async function main() {
     console.log(`  Created user ${demoUser!.id}`)
   }
 
-  const userId = demoUser.id
+  const userId = demoUser!.id
 
   // 2. Sentinel credentials (AES-encrypted)
   const sentinelCredentials = encrypt(JSON.stringify({ __demo__: 'true' }), ENCRYPTION_KEY)

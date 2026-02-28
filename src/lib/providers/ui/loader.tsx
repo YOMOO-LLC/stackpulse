@@ -8,6 +8,7 @@ import { CUSTOM_DETAIL_VIEW_IDS } from './registry'
 const VIEWS: Record<string, React.ComponentType<CustomDetailViewProps>> = {
   github: dynamic(() => import('./github')),
   openai: dynamic(() => import('./openai')),
+  supabase: dynamic(() => import('./supabase')),
   'upstash-redis': dynamic(() => import('./upstash-redis')),
 }
 

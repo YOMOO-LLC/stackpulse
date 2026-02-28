@@ -11,7 +11,7 @@ export const vercelProvider: ServiceProvider = {
     { key: 'token', label: 'API Token', type: 'password', required: true, placeholder: 'vercel_...' },
   ],
   keyGuide: {
-    url: 'https://vercel.com/account/tokens',
+    url: 'https://vercel.com/account/settings/tokens',
     steps: [
       'Go to vercel.com and sign in to your account.',
       'Navigate to Settings → Tokens.',
@@ -28,12 +28,12 @@ export const vercelProvider: ServiceProvider = {
       displayHint: 'number',
     },
     {
-      id: 'bandwidth_used',
-      name: 'Bandwidth Used',
-      metricType: 'count', unit: 'GB', refreshInterval: 300,
-      description: 'Edge bandwidth used this billing period',
+      id: 'deploy_success_rate',
+      name: 'Deploy Success Rate',
+      metricType: 'count', unit: '%', refreshInterval: 300,
+      description: 'Percentage of successful deployments in the last 24 hours',
       displayHint: 'progress',
-      thresholds: { warning: 70, critical: 90, direction: 'above', max: 100 },
+      thresholds: { warning: 80, critical: 50, direction: 'below', max: 100 },
     },
     {
       id: 'serverless_invocations',
@@ -43,26 +43,26 @@ export const vercelProvider: ServiceProvider = {
       displayHint: 'number',
     },
     {
-      id: 'active_domains',
-      name: 'Active Domains',
+      id: 'project_count',
+      name: 'Projects',
       metricType: 'count', unit: '', refreshInterval: 300,
-      description: 'Unique custom domains across all projects',
+      description: 'Total number of projects',
       displayHint: 'number',
     },
   ],
   mockFetchMetrics,
   alerts: [
     { id: 'deploy-failing', name: 'Deploy Failing', collectorId: 'deployments_24h', condition: 'gt', defaultThreshold: 0, message: 'One or more deployments have errors' },
-    { id: 'high-bandwidth', name: 'High Bandwidth', collectorId: 'bandwidth_used', condition: 'gt', defaultThreshold: 80, message: 'Bandwidth usage is above 80 GB' },
+    { id: 'low-success-rate', name: 'Low Success Rate', collectorId: 'deploy_success_rate', condition: 'lt', defaultThreshold: 80, message: 'Deploy success rate is below 80%' },
   ],
   fetchMetrics: async (credentials) => {
     const token = credentials.access_token ?? credentials.token
     const r = await fetchVercelMetrics(token)
     return [
       { collectorId: 'deployments_24h', value: r.deployments24h ?? null, valueText: null, unit: '', status: r.status },
-      { collectorId: 'bandwidth_used', value: r.bandwidthUsed ?? null, valueText: null, unit: 'GB', status: r.status },
+      { collectorId: 'deploy_success_rate', value: r.deploySuccessRate ?? null, valueText: null, unit: '%', status: r.status },
       { collectorId: 'serverless_invocations', value: r.serverlessInvocations ?? null, valueText: null, unit: 'req', status: r.status },
-      { collectorId: 'active_domains', value: r.activeDomains ?? null, valueText: null, unit: '', status: r.status },
+      { collectorId: 'project_count', value: r.projectCount ?? null, valueText: null, unit: '', status: r.status },
     ]
   },
 }
@@ -70,9 +70,9 @@ export const vercelProvider: ServiceProvider = {
 export interface VercelMetricResult {
   deployments24h: number | null
   deployments24hBreakdown: { ready: number; building: number; error: number } | null
-  bandwidthUsed: number | null
+  deploySuccessRate: number | null
   serverlessInvocations: number | null
-  activeDomains: number | null
+  projectCount: number | null
   status: 'healthy' | 'warning' | 'critical' | 'unknown'
   error?: string
 }
@@ -80,9 +80,9 @@ export interface VercelMetricResult {
 const UNKNOWN_RESULT: VercelMetricResult = {
   deployments24h: null,
   deployments24hBreakdown: null,
-  bandwidthUsed: null,
+  deploySuccessRate: null,
   serverlessInvocations: null,
-  activeDomains: null,
+  projectCount: null,
   status: 'unknown',
 }
 
@@ -106,23 +106,20 @@ export async function fetchVercelMetrics(token: string): Promise<VercelMetricRes
 
     const teamQuery = teamId ? `teamId=${teamId}&` : ''
 
-    // 3. GET /v9/projects → active domains (non-.vercel.app aliases)
+    // 3. GET /v9/projects → project count
     const projectsRes = await fetch(
       `https://api.vercel.com/v9/projects?${teamQuery}limit=100`,
       { headers },
     )
     if (!projectsRes.ok) return { ...UNKNOWN_RESULT, error: 'API error' }
     const projectsJson = await projectsRes.json()
-    const projects: Array<{ alias?: string[] }> = projectsJson.projects ?? []
+    const projects: Array<Record<string, unknown>> = projectsJson.projects ?? []
+    const projectCount = projects.length
 
-    const allAliases = projects.flatMap(p => p.alias ?? [])
-    const customDomains = allAliases.filter(a => !a.endsWith('.vercel.app'))
-    const activeDomains = new Set(customDomains).size
-
-    // 4. GET /v9/deployments?since=24h ago → count by readyState
+    // 4. GET /v6/deployments?since=24h ago → count by readyState + success rate
     const since = Date.now() - 24 * 60 * 60 * 1000
     const deploymentsRes = await fetch(
-      `https://api.vercel.com/v9/deployments?${teamQuery}limit=100&since=${since}`,
+      `https://api.vercel.com/v6/deployments?${teamQuery}limit=100&since=${since}`,
       { headers },
     )
     if (!deploymentsRes.ok) return { ...UNKNOWN_RESULT, error: 'API error' }
@@ -136,38 +133,43 @@ export async function fetchVercelMetrics(token: string): Promise<VercelMetricRes
       else if (d.readyState === 'ERROR') breakdown.error++
     }
 
-    // 5. GET /v2/usage?type=edge → bandwidth GB
-    const usageRes = await fetch(
-      `https://api.vercel.com/v2/usage?type=edge`,
-      { headers },
-    )
-    const bandwidthUsed = usageRes.ok
-      ? (await usageRes.json())?.edgeUsage?.gb ?? null
-      : null
+    const deploySuccessRate = deployments.length === 0
+      ? 100
+      : Math.round((breakdown.ready / deployments.length) * 100)
 
-    // 6. GET /v2/usage?type=requests → serverless invocations
-    const requestsRes = await fetch(
-      `https://api.vercel.com/v2/usage?type=requests`,
-      { headers },
-    )
-    const serverlessInvocations = requestsRes.ok
-      ? (await requestsRes.json())?.requestsUsage?.total ?? null
-      : null
+    // 5. GET /v2/usage → serverless invocations this billing period (non-fatal)
+    const now = new Date()
+    const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
+    const fromISO = monthStart.toISOString()
+    const toISO = now.toISOString()
+
+    let serverlessInvocations: number | null = null
+    try {
+      const usageRes = await fetch(
+        `https://api.vercel.com/v2/usage?${teamQuery}type=edge&from=${fromISO}&to=${toISO}`,
+        { headers },
+      )
+      if (usageRes.ok) {
+        const usageJson = await usageRes.json()
+        const days: Array<{ worker_invocation_count?: number }> = usageJson.data ?? []
+        serverlessInvocations = days.reduce((sum, d) => sum + (d.worker_invocation_count ?? 0), 0)
+      }
+    } catch { /* non-fatal */ }
 
     // Determine status
     let status: VercelMetricResult['status'] = 'healthy'
-    if (breakdown.error >= 3 || (bandwidthUsed !== null && bandwidthUsed > 90)) {
+    if (breakdown.error >= 3) {
       status = 'critical'
-    } else if (breakdown.error >= 1 || (bandwidthUsed !== null && bandwidthUsed > 70)) {
+    } else if (breakdown.error >= 1) {
       status = 'warning'
     }
 
     return {
       deployments24h: deployments.length,
       deployments24hBreakdown: breakdown,
-      bandwidthUsed,
+      deploySuccessRate,
       serverlessInvocations,
-      activeDomains,
+      projectCount,
       status,
     }
   } catch {

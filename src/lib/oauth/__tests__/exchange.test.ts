@@ -47,8 +47,45 @@ describe('exchangeCodeForToken', () => {
   })
 
   it('throws on HTTP error', async () => {
-    vi.mocked(global.fetch).mockResolvedValue({ ok: false, status: 400 } as Response)
+    vi.mocked(global.fetch).mockResolvedValue({
+      ok: false,
+      status: 400,
+      text: async () => '',
+    } as unknown as Response)
     await expect(exchangeCodeForToken('bad-code', MOCK_CONFIG)).rejects.toThrow('Token exchange failed')
+  })
+
+  it('includes response body in error when token exchange fails', async () => {
+    vi.mocked(global.fetch).mockResolvedValue({
+      ok: false,
+      status: 400,
+      text: async () => '{"error":"invalid_grant","error_description":"Code expired or already used"}',
+    } as unknown as Response)
+    await expect(exchangeCodeForToken('bad-code', MOCK_CONFIG)).rejects.toThrow('invalid_grant')
+  })
+
+  it('includes code_verifier in request when provided', async () => {
+    vi.mocked(global.fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({ access_token: 'act', token_type: 'bearer' }),
+    } as Response)
+
+    await exchangeCodeForToken('code', MOCK_CONFIG, 'my-code-verifier')
+    const [, init] = vi.mocked(global.fetch).mock.calls[0]
+    const body = (init as RequestInit).body as string
+    expect(body).toContain('code_verifier=my-code-verifier')
+  })
+
+  it('omits code_verifier when not provided', async () => {
+    vi.mocked(global.fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({ access_token: 'act', token_type: 'bearer' }),
+    } as Response)
+
+    await exchangeCodeForToken('code', MOCK_CONFIG)
+    const [, init] = vi.mocked(global.fetch).mock.calls[0]
+    const body = (init as RequestInit).body as string
+    expect(body).not.toContain('code_verifier')
   })
 
   it('throws on OAuth error in response body', async () => {

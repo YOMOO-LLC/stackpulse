@@ -1,4 +1,4 @@
-import type { ServiceProvider } from './types'
+import type { ServiceProvider, ProjectOption } from './types'
 import { mockFetchMetrics } from './demo-sequences/sentry'
 
 export const sentryProvider: ServiceProvider = {
@@ -6,8 +6,27 @@ export const sentryProvider: ServiceProvider = {
   name: 'Sentry',
   category: 'monitoring',
   icon: '/icons/sentry.svg',
-  authType: 'oauth2',
-  credentials: [],
+  authType: 'api_key',
+  credentials: [
+    { key: 'authToken', label: 'Auth Token', type: 'password', required: true, placeholder: 'sntryu_...' },
+  ],
+  keyGuide: {
+    url: 'https://sentry.io/settings/account/api/auth-tokens/',
+    steps: [
+      'Go to Settings → Account → API → Personal Tokens.',
+      'Click "Create New Token" and give it a name.',
+      'Set permissions: Organization → Read, Issue & Event → Read, Project → Read.',
+      'Click "Create Token" and copy it — it starts with sntryu_...',
+    ],
+  },
+  projectSelector: {
+    key: 'orgSlug',
+    label: 'Select Organization',
+    fetch: async (credentials) => {
+      const token = credentials.authToken ?? credentials.access_token ?? ''
+      return fetchSentryOrganizations(token)
+    },
+  },
   collectors: [
     {
       id: 'unresolved_errors',
@@ -21,14 +40,14 @@ export const sentryProvider: ServiceProvider = {
       trend: true,
     },
     {
-      id: 'crash_free_rate',
-      name: 'Crash-Free Rate',
-      metricType: 'percentage',
-      unit: '%',
+      id: 'apdex',
+      name: 'Apdex',
+      metricType: 'count',
+      unit: '',
       refreshInterval: 300,
-      endpoint: '/api/0/organizations/{orgSlug}/sessions/',
-      thresholds: { warning: 99, critical: 97, direction: 'below' },
-      description: 'Session crash-free rate in last 24h',
+      endpoint: '/api/0/organizations/{orgSlug}/events/',
+      thresholds: { warning: 0.75, critical: 0.5, direction: 'below' },
+      description: 'Apdex: user satisfaction score (0–1). Based on response time: >0.75 healthy, <0.5 critical.',
     },
     {
       id: 'events_24h',
@@ -61,21 +80,21 @@ export const sentryProvider: ServiceProvider = {
       message: 'Unresolved Sentry errors exceed {threshold}',
     },
     {
-      id: 'low-crash-free',
-      name: 'Low Crash-Free Rate',
-      collectorId: 'crash_free_rate',
+      id: 'low-apdex',
+      name: 'Low Apdex Score',
+      collectorId: 'apdex',
       condition: 'lt',
-      defaultThreshold: 99,
-      message: 'Crash-free rate dropped below {threshold}%',
+      defaultThreshold: 0.75,
+      message: 'Apdex score dropped below {threshold}',
     },
   ],
   fetchMetrics: async (credentials) => {
-    const token = credentials.access_token ?? credentials.authToken
+    const token = credentials.authToken ?? credentials.access_token ?? ''
     const orgSlug = credentials.orgSlug ?? ''
     const r = await fetchSentryMetrics(token, orgSlug)
     return [
       { collectorId: 'unresolved_errors', value: r.unresolvedErrors, valueText: null, unit: 'issues', status: r.status },
-      { collectorId: 'crash_free_rate', value: r.crashFreeRate, valueText: null, unit: '%', status: r.status },
+      { collectorId: 'apdex', value: r.apdex, valueText: r.apdex != null ? r.apdex.toFixed(3) : null, unit: '', status: r.status },
       { collectorId: 'events_24h', value: r.events24h, valueText: null, unit: 'events', status: r.status },
       { collectorId: 'p95_latency', value: r.p95Latency, valueText: null, unit: 'ms', status: r.status },
     ]
@@ -84,17 +103,25 @@ export const sentryProvider: ServiceProvider = {
 
 export interface SentryMetricResult {
   unresolvedErrors: number | null
-  crashFreeRate: number | null
+  apdex: number | null
   events24h: number | null
   p95Latency: number | null
   status: 'healthy' | 'warning' | 'critical' | 'unknown'
   error?: string
 }
 
+export async function fetchSentryOrganizations(authToken: string): Promise<ProjectOption[]> {
+  const headers = { Authorization: `Bearer ${authToken}` }
+  const res = await fetch('https://sentry.io/api/0/organizations/', { headers })
+  if (!res.ok) return []
+  const orgs: { slug: string; name?: string }[] = await res.json()
+  return orgs.map((o) => ({ value: o.slug, label: o.name || o.slug }))
+}
+
 export async function fetchSentryMetrics(authToken: string, orgSlug: string): Promise<SentryMetricResult> {
   const nullResult: SentryMetricResult = {
     unresolvedErrors: null,
-    crashFreeRate: null,
+    apdex: null,
     events24h: null,
     p95Latency: null,
     status: 'unknown',
@@ -150,37 +177,32 @@ export async function fetchSentryMetrics(authToken: string, orgSlug: string): Pr
       // leave as null
     }
 
-    // 4. Crash-free rate via sessions
-    let crashFreeRate: number | null = null
+    // 4. Apdex + P95 latency via events (single call)
+    let apdex: number | null = null
+    let p95Latency: number | null = null
     try {
-      const sessionsRes = await fetch(
-        `https://sentry.io/api/0/organizations/${orgSlug}/sessions/?groupBy=session.status&statsPeriod=24h`,
+      const eventsRes = await fetch(
+        `https://sentry.io/api/0/organizations/${orgSlug}/events/?dataset=transactions&field=p95(transaction.duration)&field=apdex()&statsPeriod=24h`,
         { headers }
       )
-      if (sessionsRes.ok) {
-        const data = await sessionsRes.json()
-        const groups = data.groups as Array<{ by: { 'session.status': string }; totals: { 'count()': number } }>
-        const total = groups.reduce((sum, g) => sum + g.totals['count()'], 0)
-        const crashed = groups
-          .filter((g) => g.by['session.status'] === 'crashed')
-          .reduce((sum, g) => sum + g.totals['count()'], 0)
-        if (total > 0) {
-          crashFreeRate = ((total - crashed) / total) * 100
+      if (eventsRes.ok) {
+        const data = await eventsRes.json()
+        if (data.data && data.data.length > 0) {
+          const row = data.data[0]
+          p95Latency = row['p95(transaction.duration)'] ?? null
+          apdex = row['apdex()'] ?? null
         }
       }
     } catch {
       // leave as null
     }
 
-    // 5. P95 latency — skip for now
-    const p95Latency: number | null = null
-
     // Determine status
     let status: 'healthy' | 'warning' | 'critical' = 'healthy'
 
-    if (crashFreeRate !== null && crashFreeRate < 97) {
+    if (apdex !== null && apdex < 0.5) {
       status = 'critical'
-    } else if (crashFreeRate !== null && crashFreeRate < 99) {
+    } else if (apdex !== null && apdex < 0.75) {
       status = 'warning'
     } else if (unresolvedErrors !== null && unresolvedErrors > 50) {
       status = 'critical'
@@ -188,7 +210,7 @@ export async function fetchSentryMetrics(authToken: string, orgSlug: string): Pr
       status = 'warning'
     }
 
-    return { unresolvedErrors, crashFreeRate, events24h, p95Latency, status }
+    return { unresolvedErrors, apdex, events24h, p95Latency, status }
   } catch {
     return { ...nullResult, error: 'Network error' }
   }

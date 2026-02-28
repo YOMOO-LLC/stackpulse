@@ -35,7 +35,7 @@ export default function LoginPage() {
       {/* ── Left: Brand Panel ───────────────────────────────────────────── */}
       <div
         className="hidden lg:flex w-1/2 flex-col justify-between px-14 py-15"
-        style={{ background: '#08080C' }}
+        style={{ background: 'var(--sidebar)' }}
       >
         {/* Logo */}
         <div className="flex items-center gap-2">
@@ -54,7 +54,7 @@ export default function LoginPage() {
         <div className="flex flex-col gap-7">
 
           {/* Isometric tech illustration */}
-          <div className="w-full rounded-2xl overflow-hidden" style={{ border: '1px solid #1E1E2A' }}>
+          <div className="w-full rounded-2xl overflow-hidden" style={{ border: '1px solid var(--border)' }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/login-illustration.png"
@@ -207,7 +207,7 @@ export default function LoginPage() {
                 style={{
                   color:      isError ? 'var(--sp-error)'   : 'var(--sp-success)',
                   background: isError ? 'var(--sp-error-muted)' : 'var(--sp-success-muted)',
-                  border:     `1px solid ${isError ? '#EF444433' : '#10B98133'}`,
+                  border:     `1px solid ${isError ? 'var(--sp-glow-error)' : 'var(--sp-glow)'}`,
                 }}
               >
                 {message}
@@ -256,7 +256,7 @@ export default function LoginPage() {
           <a
             href="/demo"
             className="flex items-center justify-center w-full rounded-lg py-2.5 text-sm font-medium transition-opacity hover:opacity-80"
-            style={{ background: '#1A1A2E', border: '1px solid #2D2D4A', color: '#A0A0C0' }}
+            style={{ background: 'var(--sp-bg-elevated)', border: '1px solid var(--border)', color: 'var(--muted-foreground)' }}
           >
             Try Demo — no sign-up needed
           </a>

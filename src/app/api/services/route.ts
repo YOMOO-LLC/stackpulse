@@ -3,57 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getProvider } from '@/lib/providers'
 import { encrypt } from '@/lib/crypto'
 import { registerServiceSchedule } from '@/lib/qstash'
-import { fetchOpenRouterMetrics } from '@/lib/providers/openrouter'
-import { fetchResendMetrics } from '@/lib/providers/resend'
-import { fetchSentryMetrics } from '@/lib/providers/sentry'
-
-interface SnapshotInput {
-  collectorId: string
-  value: number | null
-  valueText: string | null
-  unit: string
-  status: string
-}
-
-async function collectInitialMetrics(
-  providerId: string,
-  credentials: Record<string, string>
-): Promise<SnapshotInput[]> {
-  switch (providerId) {
-    case 'openrouter': {
-      const r = await fetchOpenRouterMetrics(credentials.apiKey)
-      return [{
-        collectorId: 'credit_balance',
-        value: r.creditBalance ?? null,
-        valueText: null,
-        unit: 'USD',
-        status: r.status,
-      }]
-    }
-    case 'resend': {
-      const r = await fetchResendMetrics(credentials.apiKey)
-      return [{
-        collectorId: 'connection_status',
-        value: null,
-        valueText: r.status !== 'unknown' ? 'Connected' : null,
-        unit: '',
-        status: r.status,
-      }]
-    }
-    case 'sentry': {
-      const r = await fetchSentryMetrics(credentials.authToken, credentials.orgSlug)
-      return [{
-        collectorId: 'error_count',
-        value: r.unresolvedErrors ?? null,
-        valueText: null,
-        unit: 'events',
-        status: r.status,
-      }]
-    }
-    default:
-      return []
-  }
-}
+import { fetchProviderMetrics } from '@/lib/providers/fetch'
 
 interface Snapshot {
   connected_service_id: string
@@ -150,9 +100,9 @@ export async function POST(req: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // 首次连接后立即采集一次
+  // 首次连接后立即采集一次 (通用 — 覆盖所有 provider)
   try {
-    const snapshots = await collectInitialMetrics(providerId, credentials)
+    const snapshots = await fetchProviderMetrics(providerId, credentials)
     if (snapshots.length > 0) {
       await supabase.from('metric_snapshots').insert(
         snapshots.map((s) => ({

@@ -66,7 +66,7 @@ export default async function LandingPage() {
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <header
         className="sticky top-0 z-50 flex items-center justify-between px-14 py-4"
-        style={{ background: '#0A0A0F', borderBottom: '1px solid #151520' }}
+        style={{ background: 'var(--background)', borderBottom: '1px solid var(--border)' }}
       >
         <Logo />
 
@@ -94,7 +94,7 @@ export default async function LandingPage() {
         {/* ── Hero ───────────────────────────────────────────────────────────── */}
         <section
           className="flex flex-col items-center text-center px-14 pt-20 pb-16"
-          style={{ background: '#0A0A0F' }}
+          style={{ background: 'var(--background)' }}
         >
           {/* Badge */}
           <div
@@ -102,7 +102,7 @@ export default async function LandingPage() {
             style={{
               background: 'var(--sp-success-muted)',
               color: 'var(--sp-success)',
-              border: '1px solid #10B98133',
+              border: '1px solid var(--sp-glow)',
             }}
           >
             <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: 'var(--sp-success)' }} />
@@ -164,7 +164,7 @@ export default async function LandingPage() {
               {/* Sidebar */}
               <div
                 className="flex flex-col gap-1 px-3 py-4 flex-shrink-0"
-                style={{ width: '160px', background: '#08080C', borderRight: '1px solid var(--border)' }}
+                style={{ width: '160px', background: 'var(--sidebar)', borderRight: '1px solid var(--border)' }}
               >
                 {/* Logo */}
                 <div className="flex items-center gap-2 px-2 py-1 mb-3">
@@ -229,9 +229,9 @@ export default async function LandingPage() {
                     style={{ border: '1px solid var(--border)' }}
                   >
                     {[
-                      { name: 'GitHub',  badge: 'Healthy', badgeColor: '#10B98133', badgeText: 'var(--primary)', metric: '4,782', metricLabel: 'API calls' },
-                      { name: 'Stripe',  badge: 'Healthy', badgeColor: '#10B98133', badgeText: 'var(--primary)', metric: '$12,450', metricLabel: 'balance' },
-                      { name: 'OpenAI',  badge: 'No Error', badgeColor: '#3B82F633', badgeText: 'var(--sp-info)', metric: '$2.5K', metricLabel: 'credits' },
+                      { name: 'GitHub',  badge: 'Healthy', badgeColor: 'var(--sp-glow)', badgeText: 'var(--primary)', metric: '4,782', metricLabel: 'API calls' },
+                      { name: 'Stripe',  badge: 'Healthy', badgeColor: 'var(--sp-glow)', badgeText: 'var(--primary)', metric: '$12,450', metricLabel: 'balance' },
+                      { name: 'OpenAI',  badge: 'No Error', badgeColor: 'var(--sp-info-muted)', badgeText: 'var(--sp-info)', metric: '$2.5K', metricLabel: 'credits' },
                     ].map((svc, i) => (
                       <div
                         key={svc.name}
@@ -261,7 +261,7 @@ export default async function LandingPage() {
                   </p>
                   <div
                     className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs"
-                    style={{ background: 'var(--sp-error-muted)', border: '1px solid #EF444433' }}
+                    style={{ background: 'var(--sp-error-muted)', border: '1px solid var(--sp-glow-error)' }}
                   >
                     <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: 'var(--sp-error)' }} />
                     <span style={{ color: 'var(--foreground)' }}>Deploy error — status exceeded threshold 95%</span>
@@ -276,9 +276,9 @@ export default async function LandingPage() {
         <section
           className="flex items-center justify-around px-32 py-10 gap-8"
           style={{
-            background: '#0A0A0F',
-            borderTop: '1px solid #151520',
-            borderBottom: '1px solid #151520',
+            background: 'var(--background)',
+            borderTop: '1px solid var(--border)',
+            borderBottom: '1px solid var(--border)',
           }}
         >
           {STATS.map((s) => (
@@ -299,7 +299,7 @@ export default async function LandingPage() {
         {/* ── Features ───────────────────────────────────────────────────────── */}
         <section
           className="flex flex-col items-center px-14 py-20"
-          style={{ background: '#0D0D14' }}
+          style={{ background: 'var(--muted)' }}
         >
           {/* Section label */}
           <span
@@ -365,7 +365,7 @@ export default async function LandingPage() {
         <section
           className="flex flex-col items-center text-center px-14 py-20"
           style={{
-            background: 'linear-gradient(to bottom, #10B98118 0%, #0A0A0F 80%)',
+            background: 'linear-gradient(to bottom, var(--sidebar-accent) 0%, var(--background) 80%)',
           }}
         >
           <h2
@@ -398,7 +398,7 @@ export default async function LandingPage() {
       {/* ── Footer ─────────────────────────────────────────────────────────── */}
       <footer
         className="px-14 pt-12 pb-8"
-        style={{ background: '#0A0A0F', borderTop: '1px solid #151520' }}
+        style={{ background: 'var(--background)', borderTop: '1px solid var(--border)' }}
       >
         <div className="flex gap-16 mb-12 flex-wrap">
           {/* Brand column */}
@@ -438,7 +438,7 @@ export default async function LandingPage() {
         {/* Bottom bar */}
         <div
           className="flex items-center justify-between pt-6"
-          style={{ borderTop: '1px solid #151520' }}
+          style={{ borderTop: '1px solid var(--border)' }}
         >
           <p className="text-xs" style={{ color: 'var(--sp-text-tertiary)' }}>
             © 2025 StackPulse. All rights reserved.

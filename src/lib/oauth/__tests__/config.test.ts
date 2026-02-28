@@ -25,6 +25,14 @@ describe('getOAuthConfig', () => {
     const config = getOAuthConfig('vercel')
     expect(config).not.toBeNull()
     expect(config!.authorizationUrl).toContain('vercel.com')
+    expect(config!.tokenUrl).toBe('https://api.vercel.com/login/oauth/token')
+    expect(config!.requiresPKCE).toBe(true)
+  })
+
+  it('returns GitHub config without PKCE', async () => {
+    const { getOAuthConfig } = await import('../config')
+    const config = getOAuthConfig('github')
+    expect(config!.requiresPKCE).toBe(false)
   })
 
   it('returns Sentry config with refresh scopes', async () => {

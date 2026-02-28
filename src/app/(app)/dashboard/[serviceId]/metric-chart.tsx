@@ -69,7 +69,7 @@ export function MetricChart({ metricType, snapshots, unit, threshold, height = 1
             contentStyle={{ fontSize: 12, borderRadius: 6 }}
             formatter={(v: number | undefined) => [formatValue(v ?? 0, metricType, unit), unit]}
           />
-          <Bar dataKey="value" fill="#10b981" radius={[2, 2, 0, 0]} />
+          <Bar dataKey="value" fill="var(--sp-success)" radius={[2, 2, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     )
@@ -80,8 +80,8 @@ export function MetricChart({ metricType, snapshots, unit, threshold, height = 1
       <AreaChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
         <defs>
           <linearGradient id={`grad-${metricType}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-            <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+            <stop offset="5%" stopColor="var(--sp-success)" stopOpacity={0.3} />
+            <stop offset="95%" stopColor="var(--sp-success)" stopOpacity={0} />
           </linearGradient>
         </defs>
         <XAxis dataKey="label" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} hide />
@@ -91,9 +91,9 @@ export function MetricChart({ metricType, snapshots, unit, threshold, height = 1
           formatter={(v: number | undefined) => [formatValue(v ?? 0, metricType, unit), '']}
         />
         {threshold !== undefined && (
-          <ReferenceLine y={threshold} stroke="#f59e0b" strokeDasharray="4 2" strokeWidth={1.5} />
+          <ReferenceLine y={threshold} stroke="var(--sp-warning)" strokeDasharray="4 2" strokeWidth={1.5} />
         )}
-        <Area type="monotone" dataKey="value" stroke="#10b981" strokeWidth={1.5} fill={`url(#grad-${metricType})`} dot={false} />
+        <Area type="monotone" dataKey="value" stroke="var(--sp-success)" strokeWidth={1.5} fill={`url(#grad-${metricType})`} dot={false} />
       </AreaChart>
     </ResponsiveContainer>
   )

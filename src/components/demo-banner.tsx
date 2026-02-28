@@ -20,9 +20,9 @@ export function DemoBanner() {
   return (
     <div
       className="flex items-center justify-between rounded-xl px-4 py-3"
-      style={{ background: '#1A1A2E', border: '1px solid #2D2D4A' }}
+      style={{ background: 'var(--sp-bg-elevated)', border: '1px solid var(--border)' }}
     >
-      <span className="text-sm" style={{ color: '#A0A0C0' }}>
+      <span className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
         Demo Mode &nbsp;&middot;&nbsp; Data resets automatically every 2 hours
       </span>
       <div className="flex items-center gap-2">
@@ -31,7 +31,7 @@ export function DemoBanner() {
           onClick={handleReset}
           disabled={resetting}
           className="rounded-lg px-3 py-1.5 text-xs font-medium transition-opacity hover:opacity-80 disabled:opacity-50"
-          style={{ background: '#10B981', color: '#000' }}
+          style={{ background: 'var(--primary)', color: 'var(--primary-foreground)' }}
         >
           {resetting ? 'Resetting\u2026' : 'Reset Now'}
         </button>
@@ -39,7 +39,7 @@ export function DemoBanner() {
           type="button"
           onClick={() => setVisible(false)}
           className="rounded-lg px-3 py-1.5 text-xs font-medium transition-opacity hover:opacity-80"
-          style={{ background: '#1E1E2A', color: '#8888A0' }}
+          style={{ background: 'var(--border)', color: 'var(--muted-foreground)' }}
         >
           Dismiss
         </button>

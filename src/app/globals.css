@@ -53,6 +53,7 @@
   --color-sp-info: var(--sp-info);
   --color-sp-info-muted: var(--sp-info-muted);
   --color-sp-glow: var(--sp-glow);
+  --color-sp-glow-error: var(--sp-glow-error);
   --color-sp-text-tertiary: var(--sp-text-tertiary);
 }
 
@@ -120,7 +121,66 @@
   --sp-info:          #3B82F6;
   --sp-info-muted:    #3B82F620;
   --sp-glow:          #10B98130; /* emerald 19% alpha */
+  --sp-glow-error:    #EF444433; /* red 20% alpha */
   --sp-text-tertiary: #555570;
+}
+
+/* ─── Light theme ─── */
+.light {
+  --background:    #FAFAFA;
+  --foreground:    #111118;
+
+  --card:          #FFFFFF;
+  --card-foreground: #111118;
+
+  --popover:       #FFFFFF;
+  --popover-foreground: #111118;
+
+  --primary:       #059669;   /* emerald-600 — slightly darker for light bg */
+  --primary-foreground: #FFFFFF;
+
+  --secondary:     #F1F5F9;
+  --secondary-foreground: #1E293B;
+
+  --muted:         #F1F5F9;
+  --muted-foreground: #64748B;
+
+  --accent:        #F1F5F9;
+  --accent-foreground: #1E293B;
+
+  --destructive:   #DC2626;
+
+  --border:        #E2E8F0;
+  --input:         #E2E8F0;
+  --ring:          #05966666;
+
+  --chart-1: #059669;
+  --chart-2: oklch(0.769 0.188 70.08);
+  --chart-3: oklch(0.646 0.222 41.116);
+  --chart-4: oklch(0.6 0.118 184.704);
+  --chart-5: oklch(0.488 0.243 264.376);
+
+  --sidebar:                   #FFFFFF;
+  --sidebar-foreground:        #111118;
+  --sidebar-primary:           #059669;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent:            #05966612;
+  --sidebar-accent-foreground: #111118;
+  --sidebar-border:            #E2E8F0;
+  --sidebar-ring:              #05966666;
+
+  --sp-bg-elevated:   #FFFFFF;
+  --sp-success:       #059669;
+  --sp-success-muted: #05966618;
+  --sp-warning:       #D97706;
+  --sp-warning-muted: #D9770618;
+  --sp-error:         #DC2626;
+  --sp-error-muted:   #DC262618;
+  --sp-info:          #2563EB;
+  --sp-info-muted:    #2563EB18;
+  --sp-glow:          #05966620;
+  --sp-glow-error:    #DC262630;
+  --sp-text-tertiary: #94A3B8;
 }
 
 /* .dark block kept for shadcn component compatibility */
@@ -161,6 +221,7 @@
   --sp-info:          #3B82F6;
   --sp-info-muted:    #3B82F620;
   --sp-glow:          #10B98130;
+  --sp-glow-error:    #EF444433;
   --sp-text-tertiary: #555570;
 }
 

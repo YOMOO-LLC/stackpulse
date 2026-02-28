@@ -9,7 +9,7 @@ vi.mock('next/headers', () => ({
   })),
 }))
 
-import { generateState, setStateCookie, verifyStateCookie, setLabelCookie, getLabelCookie } from '../state'
+import { generateState, setStateCookie, verifyStateCookie, setLabelCookie, getLabelCookie, setCodeVerifierCookie, getCodeVerifierCookie } from '../state'
 
 describe('generateState', () => {
   it('returns a 64-char hex string', () => {
@@ -42,6 +42,26 @@ describe('state cookie round-trip', () => {
     await verifyStateCookie('abc123')
     const validAgain = await verifyStateCookie('abc123')
     expect(validAgain).toBe(false)
+  })
+})
+
+describe('code_verifier cookie round-trip', () => {
+  beforeEach(() => { mockCookies.clear() })
+
+  it('stores and retrieves code_verifier', async () => {
+    await setCodeVerifierCookie('verifier123')
+    const v = await getCodeVerifierCookie()
+    expect(v).toBe('verifier123')
+  })
+
+  it('returns null when no code_verifier set', async () => {
+    expect(await getCodeVerifierCookie()).toBeNull()
+  })
+
+  it('clears cookie after retrieval', async () => {
+    await setCodeVerifierCookie('v')
+    await getCodeVerifierCookie()
+    expect(await getCodeVerifierCookie()).toBeNull()
   })
 })
 

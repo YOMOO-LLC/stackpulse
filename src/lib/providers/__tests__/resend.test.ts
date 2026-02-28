@@ -20,11 +20,13 @@ const mockDomains = (domains: Array<{ status: string }>) =>
   }) as unknown as Response
 
 const mockEmails = (
-  emails: Array<{ created_at: string; last_event: string }>
+  emails: Array<{ created_at: string; last_event: string }>,
+  headers?: Record<string, string>
 ) =>
   ({
     ok: true,
     status: 200,
+    headers: new Headers(headers ?? {}),
     json: async () => ({ data: emails }),
   }) as unknown as Response
 
@@ -219,7 +221,96 @@ describe('fetchResendMetrics', () => {
     const result = await fetchResendMetrics('re_test_key')
 
     expect(result.emailsSent24h).toBe(2)
-    expect(result.monthlyQuota).toBe(4) // total emails in response
+    // monthlyQuota: count of emails created in current month (all 4 are within 48h)
+    expect(result.monthlyQuota).toBe(4)
+  })
+
+  it('uses x-resend-monthly-quota header when available', async () => {
+    mockFetch
+      .mockResolvedValueOnce(mockDomains([{ status: 'verified' }]))
+      .mockResolvedValueOnce(
+        mockEmails(
+          [
+            { created_at: recentDate(1), last_event: 'delivered' },
+            { created_at: recentDate(2), last_event: 'delivered' },
+          ],
+          { 'x-resend-monthly-quota': '5432' }
+        )
+      )
+
+    const result = await fetchResendMetrics('re_test_key')
+    expect(result.monthlyQuota).toBe(5432)
+  })
+
+  it('paginates to count all emails this month when header is absent', async () => {
+    // Page 1: 2 emails, has_more
+    // Page 2: 1 email from this month + 1 old, no more pages needed
+    const page1Emails = [
+      { id: 'e1', created_at: recentDate(1), last_event: 'delivered' },
+      { id: 'e2', created_at: recentDate(12), last_event: 'delivered' },
+    ]
+    const page2Emails = [
+      { id: 'e3', created_at: recentDate(24), last_event: 'delivered' },
+      { id: 'e4', created_at: '2025-01-15T00:00:00Z', last_event: 'delivered' },
+    ]
+
+    mockFetch
+      .mockResolvedValueOnce(mockDomains([{ status: 'verified' }]))
+      .mockResolvedValueOnce(
+        ({
+          ok: true, status: 200, headers: new Headers(),
+          json: async () => ({ data: page1Emails, has_more: true }),
+        }) as unknown as Response
+      )
+      // Pagination: page 2
+      .mockResolvedValueOnce(
+        ({
+          ok: true, status: 200, headers: new Headers(),
+          json: async () => ({ data: page2Emails, has_more: false }),
+        }) as unknown as Response
+      )
+
+    const result = await fetchResendMetrics('re_test_key')
+    // 3 emails from this month (e1 + e2 + e3), e4 is from 2025
+    expect(result.monthlyQuota).toBe(3)
+  })
+
+  it('retries pagination on 429 rate limit and succeeds', async () => {
+    const page1Emails = [
+      { id: 'e1', created_at: recentDate(1), last_event: 'delivered' },
+      { id: 'e2', created_at: recentDate(12), last_event: 'delivered' },
+    ]
+    const page2Emails = [
+      { id: 'e3', created_at: recentDate(24), last_event: 'delivered' },
+      { id: 'e4', created_at: '2025-01-15T00:00:00Z', last_event: 'delivered' },
+    ]
+
+    mockFetch
+      .mockResolvedValueOnce(mockDomains([{ status: 'verified' }]))
+      .mockResolvedValueOnce(
+        ({
+          ok: true, status: 200, headers: new Headers(),
+          json: async () => ({ data: page1Emails, has_more: true }),
+        }) as unknown as Response
+      )
+      // First pagination attempt: 429 rate limited
+      .mockResolvedValueOnce(
+        ({
+          ok: false, status: 429,
+          text: async () => 'Too many requests',
+        }) as unknown as Response
+      )
+      // Retry succeeds
+      .mockResolvedValueOnce(
+        ({
+          ok: true, status: 200, headers: new Headers(),
+          json: async () => ({ data: page2Emails, has_more: false }),
+        }) as unknown as Response
+      )
+
+    const result = await fetchResendMetrics('re_test_key')
+    // 3 emails from this month (e1 + e2 + e3), e4 is from 2025
+    expect(result.monthlyQuota).toBe(3)
   })
 
   it('status is critical when bounce rate >= 5%', async () => {

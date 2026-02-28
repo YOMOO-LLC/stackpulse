@@ -70,6 +70,16 @@ describe('CollapsibleServiceTable', () => {
     expect(screen.getByRole('link', { name: /project-b/i })).toHaveAttribute('href', '/dashboard/svc-2')
   })
 
+  it('shows "Critical" label for critical status (not "Failed")', () => {
+    const criticalGroups: ProviderGroup[] = [{
+      providerId: 'sentry', providerName: 'Sentry', isGroup: false, groupStatus: 'critical',
+      services: [{ id: 'svc-s', providerId: 'sentry', providerName: 'Sentry', label: 'sentry', status: 'critical', collectors: [], lastUpdated: undefined }],
+    }]
+    render(<CollapsibleServiceTable groups={criticalGroups} />)
+    expect(screen.getByText('Critical')).toBeInTheDocument()
+    expect(screen.queryByText('Failed')).not.toBeInTheDocument()
+  })
+
   it('renders single service as a direct link (no button)', () => {
     render(<CollapsibleServiceTable groups={singleGroups} />)
     const link = screen.getByRole('link', { name: /github/i })

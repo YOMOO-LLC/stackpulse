@@ -4,6 +4,7 @@ import type { CustomDetailViewProps } from './types'
 export const CUSTOM_DETAIL_VIEW_IDS = new Set<string>([
   'github',
   'openai',
+  'supabase',
   'upstash-redis',
 ])
 

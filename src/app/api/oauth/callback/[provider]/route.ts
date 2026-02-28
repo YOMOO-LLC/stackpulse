@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { verifyStateCookie, getLabelCookie } from '@/lib/oauth/state'
+import { verifyStateCookie, getLabelCookie, getCodeVerifierCookie } from '@/lib/oauth/state'
 import { getOAuthConfig } from '@/lib/oauth/config'
 import { exchangeCodeForToken, type OAuthTokens } from '@/lib/oauth/exchange'
 import { encrypt } from '@/lib/crypto'
@@ -57,7 +57,8 @@ export async function GET(
   }
 
   try {
-    const tokens = await exchangeCodeForToken(code, config)
+    const codeVerifier = config.requiresPKCE ? await getCodeVerifierCookie() ?? undefined : undefined
+    const tokens = await exchangeCodeForToken(code, config, codeVerifier)
     const label = await getLabelCookie() ?? serviceProvider.name
 
     // Sentry needs org slug for metric fetching
@@ -116,7 +117,8 @@ export async function GET(
     }
 
     return NextResponse.redirect(new URL('/dashboard', req.url))
-  } catch {
+  } catch (err) {
+    console.error(`[oauth-callback/${provider}]`, err)
     return NextResponse.redirect(new URL(`/connect/${provider}?error=oauth_failed`, req.url))
   }
 }

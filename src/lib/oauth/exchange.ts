@@ -10,7 +10,8 @@ export interface OAuthTokens {
 
 export async function exchangeCodeForToken(
   code: string,
-  config: OAuthProviderConfig
+  config: OAuthProviderConfig,
+  codeVerifier?: string
 ): Promise<OAuthTokens> {
   const params = new URLSearchParams({
     client_id: config.clientId,
@@ -19,6 +20,9 @@ export async function exchangeCodeForToken(
     redirect_uri: config.redirectUri,
     grant_type: 'authorization_code',
   })
+  if (codeVerifier) {
+    params.set('code_verifier', codeVerifier)
+  }
 
   const res = await fetch(config.tokenUrl, {
     method: 'POST',
@@ -30,7 +34,8 @@ export async function exchangeCodeForToken(
   })
 
   if (!res.ok) {
-    throw new Error(`Token exchange failed: ${res.status}`)
+    const body = await res.text().catch(() => '')
+    throw new Error(`Token exchange failed: ${res.status} ${body}`)
   }
 
   const json = await res.json()

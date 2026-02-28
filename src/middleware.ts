@@ -24,7 +24,22 @@ export async function middleware(request: NextRequest) {
   )
 
   // Refresh session — route protection is handled in each layout's Server Component
-  await supabase.auth.getUser()
+  // Guard against stale refresh tokens: getUser() can hang forever if the token is
+  // invalid, so race it against a timeout. On failure, clear auth cookies.
+  try {
+    await Promise.race([
+      supabase.auth.getUser(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Auth timeout')), 5000)),
+    ])
+  } catch {
+    // Clear Supabase auth cookies to prevent infinite retry with a bad token
+    const cookieNames = request.cookies.getAll().map((c) => c.name)
+    for (const name of cookieNames) {
+      if (name.startsWith('sb-')) {
+        supabaseResponse.cookies.set(name, '', { maxAge: 0, path: '/' })
+      }
+    }
+  }
 
   return supabaseResponse
 }

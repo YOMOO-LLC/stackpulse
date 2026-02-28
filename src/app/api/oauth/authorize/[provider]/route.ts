@@ -1,6 +1,7 @@
+import { createHash, randomBytes } from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { generateState, setStateCookie, setLabelCookie } from '@/lib/oauth/state'
+import { generateState, setStateCookie, setLabelCookie, setCodeVerifierCookie } from '@/lib/oauth/state'
 import { getOAuthConfig } from '@/lib/oauth/config'
 
 export async function GET(
@@ -34,6 +35,14 @@ export async function GET(
   authUrl.searchParams.set('state', state)
   if (config.scopes.length > 0) {
     authUrl.searchParams.set('scope', config.scopes.join(' '))
+  }
+
+  if (config.requiresPKCE) {
+    const codeVerifier = randomBytes(32).toString('hex')
+    const codeChallenge = createHash('sha256').update(codeVerifier).digest('base64url')
+    await setCodeVerifierCookie(codeVerifier)
+    authUrl.searchParams.set('code_challenge', codeChallenge)
+    authUrl.searchParams.set('code_challenge_method', 'S256')
   }
 
   return NextResponse.redirect(authUrl.toString())

@@ -6,6 +6,7 @@ export interface OpenRouterMetricResult {
   monthlySpend: number | null
   requests24h: number | null
   modelsUsed: number | null
+  totalTokens: number | null
   status: 'healthy' | 'warning' | 'unknown'
   error?: string
 }
@@ -15,7 +16,7 @@ export async function fetchOpenRouterMetrics(apiKey: string): Promise<OpenRouter
   try {
     const creditsRes = await fetch('https://openrouter.ai/api/v1/credits', { headers })
     if (!creditsRes.ok) {
-      return { creditBalance: null, monthlySpend: null, requests24h: null, modelsUsed: null, status: 'unknown', error: `HTTP ${creditsRes.status}` }
+      return { creditBalance: null, monthlySpend: null, requests24h: null, modelsUsed: null, totalTokens: null, status: 'unknown', error: `HTTP ${creditsRes.status}` }
     }
 
     const json = await creditsRes.json()
@@ -26,19 +27,28 @@ export async function fetchOpenRouterMetrics(apiKey: string): Promise<OpenRouter
 
     let requests24h: number | null = null
     let modelsUsed: number | null = null
+    let totalTokens: number | null = null
     try {
       const activityRes = await fetch('https://openrouter.ai/api/v1/activity', { headers })
       if (activityRes.ok) {
         const activityJson = await activityRes.json()
-        const items: { date: string; model: string; requests: number }[] = activityJson.data ?? []
+        const items: { date: string; model: string; requests: number; prompt_tokens?: number; completion_tokens?: number; reasoning_tokens?: number }[] = activityJson.data ?? []
 
-        // requests_24h: sum requests for today (UTC)
-        const todayUTC = new Date().toISOString().slice(0, 10)
+        // requests_24h: sum requests for today + yesterday (UTC) to approximate 24h window
+        // Note: activity API returns dates as "YYYY-MM-DD 00:00:00", so compare first 10 chars
+        const now = new Date()
+        const todayUTC = now.toISOString().slice(0, 10)
+        const yd = new Date(now)
+        yd.setUTCDate(yd.getUTCDate() - 1)
+        const yesterdayUTC = yd.toISOString().slice(0, 10)
         requests24h = 0
+        totalTokens = 0
         for (const item of items) {
-          if (item.date === todayUTC) {
+          const itemDate = item.date.slice(0, 10)
+          if (itemDate === todayUTC || itemDate === yesterdayUTC) {
             requests24h += item.requests ?? 0
           }
+          totalTokens += (item.prompt_tokens ?? 0) + (item.completion_tokens ?? 0) + (item.reasoning_tokens ?? 0)
         }
 
         // models_used: distinct models across all returned data (last 30 days)
@@ -51,9 +61,9 @@ export async function fetchOpenRouterMetrics(apiKey: string): Promise<OpenRouter
     } catch { /* non-fatal */ }
 
     const status = creditBalance < 2 ? 'warning' : 'healthy'
-    return { creditBalance, monthlySpend, requests24h, modelsUsed, status }
+    return { creditBalance, monthlySpend, requests24h, modelsUsed, totalTokens, status }
   } catch {
-    return { creditBalance: null, monthlySpend: null, requests24h: null, modelsUsed: null, status: 'unknown', error: 'Network error' }
+    return { creditBalance: null, monthlySpend: null, requests24h: null, modelsUsed: null, totalTokens: null, status: 'unknown', error: 'Network error' }
   }
 }
 
@@ -67,12 +77,12 @@ export const openrouterProvider: ServiceProvider = {
     { key: 'apiKey', label: 'API Key', type: 'password', required: true },
   ],
   keyGuide: {
-    url: 'https://openrouter.ai/keys',
+    url: 'https://openrouter.ai/settings/management-keys',
     steps: [
       'Go to openrouter.ai and sign in to your account.',
-      'Navigate to Keys in the left sidebar.',
-      'Click "Create Key" and give it a name.',
-      'Copy the generated API key — it starts with sk-or-...',
+      'Navigate to Settings → Management Keys in the left sidebar.',
+      'Click "Create Management Key" and give it a name.',
+      'Copy the generated key — Management Keys have access to activity and usage data.',
     ],
   },
   collectors: [
@@ -115,6 +125,15 @@ export const openrouterProvider: ServiceProvider = {
       refreshInterval: 300,
       description: 'Distinct models used this month',
     },
+    {
+      id: 'total_tokens',
+      name: 'Total Tokens',
+      metricType: 'count',
+      unit: 'tokens',
+      refreshInterval: 300,
+      description: 'Total token usage across all models (30 days)',
+      trend: true,
+    },
   ],
   mockFetchMetrics,
   alerts: [
@@ -134,6 +153,7 @@ export const openrouterProvider: ServiceProvider = {
       { collectorId: 'monthly_spend', value: r.monthlySpend ?? null, valueText: null, unit: 'USD', status: r.status },
       { collectorId: 'requests_24h', value: r.requests24h ?? null, valueText: null, unit: 'requests', status: r.status },
       { collectorId: 'models_used', value: r.modelsUsed ?? null, valueText: null, unit: 'models', status: r.status },
+      { collectorId: 'total_tokens', value: r.totalTokens ?? null, valueText: null, unit: 'tokens', status: r.status },
     ]
   },
 }

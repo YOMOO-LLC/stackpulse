@@ -40,3 +40,21 @@ export async function getLabelCookie(): Promise<string | null> {
   jar.delete('oauth_label')
   return label
 }
+
+export async function setCodeVerifierCookie(codeVerifier: string): Promise<void> {
+  const jar = await cookies()
+  jar.set('oauth_code_verifier', codeVerifier, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 60 * 10,
+    path: '/',
+  })
+}
+
+export async function getCodeVerifierCookie(): Promise<string | null> {
+  const jar = await cookies()
+  const verifier = jar.get('oauth_code_verifier')?.value ?? null
+  jar.delete('oauth_code_verifier')
+  return verifier
+}

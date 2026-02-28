@@ -38,6 +38,7 @@ export async function fetchResendMetrics(apiKey: string): Promise<ResendMetricRe
       return { ...nullResult, error: 'Auth failed' }
     }
 
+
     // Domains
     let verifiedDomains = 0
     let totalDomains = 0
@@ -57,15 +58,61 @@ export async function fetchResendMetrics(apiKey: string): Promise<ResendMetricRe
 
     if (emailsRes.ok) {
       const emailsJson = await emailsRes.json()
-      const emails = emailsJson.data ?? []
+      const emails: { id?: string; created_at: string; last_event: string }[] = emailsJson.data ?? []
       const since24h = Date.now() - 24 * 60 * 60 * 1000
-      const recent = emails.filter((e: { created_at: string }) => new Date(e.created_at).getTime() > since24h)
+      const recent = emails.filter((e) => new Date(e.created_at).getTime() > since24h)
       emailsSent24h = recent.length
-      const bounced = recent.filter((e: { last_event: string }) => e.last_event === 'bounced').length
+      const bounced = recent.filter((e) => e.last_event === 'bounced').length
       bounceCount = bounced
       bounceRate = recent.length > 0 ? Math.round((bounced / recent.length) * 1000) / 10 : 0
       deliveryRate = recent.length > 0 ? Math.round(((recent.length - bounced) / recent.length) * 1000) / 10 : 100
-      monthlyQuota = emails.length
+
+      // Monthly quota: prefer x-resend-monthly-quota header, fall back to paginated count
+      const quotaHeader = emailsRes.headers.get('x-resend-monthly-quota')
+      if (quotaHeader) {
+        monthlyQuota = parseInt(quotaHeader, 10)
+      } else {
+        const now = new Date()
+        const currentMonth = now.getUTCFullYear() * 100 + now.getUTCMonth()
+        const isThisMonth = (dateStr: string) => {
+          const d = new Date(dateStr)
+          return d.getUTCFullYear() * 100 + d.getUTCMonth() === currentMonth
+        }
+
+        monthlyQuota = emails.filter((e) => isThisMonth(e.created_at)).length
+
+        // Paginate if all returned emails are this month and there are more pages
+        let hasMore = emailsJson.has_more === true
+        let lastId = emails[emails.length - 1]?.id
+        let pages = 0
+        while (hasMore && lastId && pages < 20) {
+          const lastEmail = emails.length > 0 ? emails[emails.length - 1] : null
+          if (lastEmail && !isThisMonth(lastEmail.created_at)) break
+
+          pages++
+          try {
+            // Resend rate limit: 2 req/s. Wait before pagination to avoid 429.
+            await new Promise((r) => setTimeout(r, 1100))
+            let pageRes = await fetch(`https://api.resend.com/emails?limit=100&after=${lastId}`, { headers })
+            // Retry once on 429 rate limit
+            if (pageRes.status === 429) {
+              await new Promise((r) => setTimeout(r, 1100))
+              pageRes = await fetch(`https://api.resend.com/emails?limit=100&after=${lastId}`, { headers })
+            }
+            if (!pageRes.ok) break
+            const pageJson = await pageRes.json()
+            const pageEmails: { id?: string; created_at: string }[] = pageJson.data ?? []
+            if (pageEmails.length === 0) break
+
+            monthlyQuota += pageEmails.filter((e) => isThisMonth(e.created_at)).length
+            hasMore = pageJson.has_more === true
+            lastId = pageEmails[pageEmails.length - 1]?.id
+
+            // Stop if we've hit emails from a previous month
+            if (!isThisMonth(pageEmails[pageEmails.length - 1].created_at)) break
+          } catch { break }
+        }
+      }
     }
 
     let status: ResendMetricResult['status'] = 'healthy'
@@ -147,12 +194,12 @@ export const resendProvider: ServiceProvider = {
     },
     {
       id: 'monthly_quota',
-      name: 'Monthly Quota',
+      name: 'Monthly Sent',
       metricType: 'count',
       unit: 'emails',
       refreshInterval: 300,
       endpoint: '/emails',
-      description: 'Emails sent this month',
+      description: 'Total emails sent this month',
     },
   ],
   mockFetchMetrics,

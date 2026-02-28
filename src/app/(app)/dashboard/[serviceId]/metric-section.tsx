@@ -19,8 +19,16 @@ interface MetricSectionProps {
   snapshots: Snapshot[]
 }
 
-function formatValue(value: number | null, valueText: string | null, metricType: string): string {
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
+}
+
+function formatValue(value: number | null, valueText: string | null, metricType: string, unit?: string): string {
   if (value !== null) {
+    if (unit === 'bytes') return formatBytes(value)
     if (metricType === 'currency') return `$${value.toFixed(2)}`
     if (metricType === 'percentage') return `${value.toFixed(1)}%`
     if (value >= 1000) return value.toLocaleString()
@@ -80,11 +88,20 @@ export function MetricSection({ serviceId, collectors, snapshots }: MetricSectio
     return () => { supabase.removeChannel(channel) }
   }, [serviceId])
 
-  if (collectors.length === 0) return null
+  // Only render collectors without a section tag — sectioned ones go to custom views
+  const unsectioned = collectors.filter((c) => !c.section)
+
+  // Hide collectors that have never had a non-null value (e.g. admin key can't fetch credit_balance)
+  const hasAnyData = liveSnapshots.length > 0
+  const visibleCollectors = hasAnyData
+    ? unsectioned.filter((c) => liveSnapshots.some((s) => s.collector_id === c.id && (s.value !== null || s.value_text !== null)))
+    : unsectioned
+
+  if (visibleCollectors.length === 0) return null
 
   return (
     <div className="flex gap-3.5 flex-wrap">
-      {collectors.map((collector) => {
+      {visibleCollectors.map((collector) => {
         const collectorSnaps = liveSnapshots
           .filter((s) => s.collector_id === collector.id)
           .sort((a, b) => new Date(a.fetched_at).getTime() - new Date(b.fetched_at).getTime())
@@ -103,15 +120,23 @@ export function MetricSection({ serviceId, collectors, snapshots }: MetricSectio
               border: '1px solid var(--border)',
             }}
           >
-            <p className="text-xs font-medium" style={{ color: 'var(--muted-foreground)' }}>
+            <p className="text-xs font-medium flex items-center gap-1" style={{ color: 'var(--muted-foreground)' }}>
               {collector.name}
+              {collector.description && (
+                <span
+                  title={collector.description}
+                  style={{ cursor: 'help', opacity: 0.5, fontSize: '10px' }}
+                >
+                  &#9432;
+                </span>
+              )}
             </p>
             <p
               className="font-bold leading-none"
               data-health={health}
               style={{ fontSize: '26px', letterSpacing: '-1px', color: valueColor }}
             >
-              {formatValue(value, latest?.value_text ?? null, collector.metricType)}
+              {formatValue(value, latest?.value_text ?? null, collector.metricType, collector.unit)}
             </p>
             {collector.displayHint === 'progress' && collector.thresholds?.max && value != null && (
               <div
@@ -128,7 +153,7 @@ export function MetricSection({ serviceId, collectors, snapshots }: MetricSectio
                 }} />
               </div>
             )}
-            {latest?.unit && (
+            {latest?.unit && latest.unit !== 'bytes' && (
               <p className="text-[11px]" style={{ color: 'var(--sp-text-tertiary)' }}>
                 {latest.unit}
               </p>

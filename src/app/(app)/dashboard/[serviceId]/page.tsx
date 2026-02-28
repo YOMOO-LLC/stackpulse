@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { getProvider } from '@/lib/providers'
+import { decrypt } from '@/lib/crypto'
 import { ProviderIcon } from '@/components/provider-icon'
 import { MetricSection } from './metric-section'
 import { AlertRulesSection } from './alert-rules-section'
@@ -24,7 +25,7 @@ export default async function ServiceDetailPage({ params }: PageProps) {
 
   const { data: service } = await supabase
     .from('connected_services')
-    .select('id, provider_id, label, enabled, auth_expired')
+    .select('id, provider_id, label, enabled, auth_expired, credentials')
     .eq('id', serviceId)
     .eq('user_id', user!.id)
     .single()
@@ -32,6 +33,13 @@ export default async function ServiceDetailPage({ params }: PageProps) {
   if (!service) notFound()
 
   const provider = getProvider(service.provider_id)
+
+  // Extract non-sensitive metadata (e.g. project_name) from encrypted credentials
+  let projectName: string | undefined
+  try {
+    const creds = JSON.parse(decrypt(service.credentials, process.env.ENCRYPTION_KEY!))
+    projectName = creds.project_name
+  } catch { /* ignore decryption errors */ }
 
   const since = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()
   const { data: snapshots } = await supabase
@@ -68,7 +76,9 @@ export default async function ServiceDetailPage({ params }: PageProps) {
               {serviceName}
             </h1>
             <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
-              {provider?.name ?? service.provider_id} · {service.enabled ? 'Active' : 'Disabled'}
+              {provider?.name ?? service.provider_id}
+              {projectName ? ` · ${projectName}` : ''}
+              {' · '}{service.enabled ? 'Active' : 'Disabled'}
             </p>
           </div>
         </div>

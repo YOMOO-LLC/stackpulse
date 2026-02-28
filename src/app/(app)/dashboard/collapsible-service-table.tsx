@@ -9,10 +9,10 @@ import { timeAgo, pickKeyMetrics, type ProviderGroup, type CollectorRow } from '
 type Status = 'healthy' | 'warning' | 'critical' | 'unknown'
 
 const STATUS_DOT: Record<Status, { label: string; color: string; dot: string }> = {
-  healthy:  { label: 'Healthy', color: '#10B981', dot: '#10B981' },
-  warning:  { label: 'Warning', color: '#F59E0B', dot: '#F59E0B' },
-  critical: { label: 'Failed',  color: '#EF4444', dot: '#EF4444' },
-  unknown:  { label: 'Unknown', color: '#555570', dot: '#555570' },
+  healthy:  { label: 'Healthy', color: 'var(--primary)', dot: 'var(--primary)' },
+  warning:  { label: 'Warning', color: 'var(--sp-warning)', dot: 'var(--sp-warning)' },
+  critical: { label: 'Critical', color: 'var(--sp-error)', dot: 'var(--sp-error)' },
+  unknown:  { label: 'Unknown', color: 'var(--sp-text-tertiary)', dot: 'var(--sp-text-tertiary)' },
 }
 
 function StatusDot({ status }: { status: Status }) {
@@ -30,7 +30,7 @@ function StatusDot({ status }: { status: Status }) {
 
 function InlineMetrics({ collectors }: { collectors: CollectorRow[] }) {
   const metrics = pickKeyMetrics(collectors, 3)
-  if (metrics.length === 0) return <span className="text-xs" style={{ color: '#555570' }}>—</span>
+  if (metrics.length === 0) return <span className="text-xs" style={{ color: 'var(--sp-text-tertiary)' }}>—</span>
   return (
     <span className="flex items-center gap-4">
       {metrics.map((c) => {
@@ -41,8 +41,8 @@ function InlineMetrics({ collectors }: { collectors: CollectorRow[] }) {
         const short = c.name.split(' ').pop()?.toLowerCase() ?? c.id
         return (
           <span key={c.id} className="flex items-center gap-1">
-            <span className="text-xs font-semibold" style={{ color: '#F0F0F5' }}>{val}</span>
-            <span className="text-[11px]" style={{ color: '#555570' }}>{short}</span>
+            <span className="text-xs font-semibold" style={{ color: 'var(--foreground)' }}>{val}</span>
+            <span className="text-[11px]" style={{ color: 'var(--sp-text-tertiary)' }}>{short}</span>
           </span>
         )
       })}
@@ -72,23 +72,23 @@ export function CollapsibleServiceTable({ groups }: Props) {
   return (
     <div
       className="rounded-xl overflow-hidden"
-      style={{ background: '#111118', border: '1px solid #1E1E2A' }}
+      style={{ background: 'var(--card)', border: '1px solid var(--border)' }}
     >
       {/* Table Header */}
       <div
         className="flex items-center px-4 py-2.5"
-        style={{ background: '#0D0D14', borderBottom: '1px solid #1E1E2A' }}
+        style={{ background: 'var(--muted)', borderBottom: '1px solid var(--border)' }}
       >
-        <span className="text-[11px] font-semibold" style={{ color: '#555570', width: 280 }}>Service</span>
-        <span className="text-[11px] font-semibold" style={{ color: '#555570', width: 100 }}>Status</span>
-        <span className="text-[11px] font-semibold flex-1" style={{ color: '#555570' }}>Key Metrics</span>
-        <span className="text-[11px] font-semibold" style={{ color: '#555570', textAlign: 'right', minWidth: 80 }}>Last Synced</span>
+        <span className="text-[11px] font-semibold" style={{ color: 'var(--sp-text-tertiary)', width: 280 }}>Service</span>
+        <span className="text-[11px] font-semibold" style={{ color: 'var(--sp-text-tertiary)', width: 100 }}>Status</span>
+        <span className="text-[11px] font-semibold flex-1" style={{ color: 'var(--sp-text-tertiary)' }}>Key Metrics</span>
+        <span className="text-[11px] font-semibold" style={{ color: 'var(--sp-text-tertiary)', textAlign: 'right', minWidth: 80 }}>Last Synced</span>
       </div>
 
       {/* Rows */}
       {groups.map((group, gi) => {
         const isLast = gi === groups.length - 1
-        const borderBottom = isLast ? undefined : '1px solid #1E1E2A'
+        const borderBottom = isLast ? undefined : '1px solid var(--border)'
 
         if (!group.isGroup) {
           const svc = group.services[0]
@@ -101,7 +101,7 @@ export function CollapsibleServiceTable({ groups }: Props) {
             >
               <div className="flex items-center gap-2.5" style={{ width: 280, minWidth: 0 }}>
                 <ProviderIcon providerId={svc.providerId} size={22} />
-                <span className="text-[13px] font-semibold truncate" style={{ color: '#F0F0F5' }}>
+                <span className="text-[13px] font-semibold truncate" style={{ color: 'var(--foreground)' }}>
                   {svc.label}
                 </span>
               </div>
@@ -113,7 +113,7 @@ export function CollapsibleServiceTable({ groups }: Props) {
               </div>
               <div style={{ minWidth: 80, textAlign: 'right' }}>
                 {svc.lastUpdated ? (
-                  <span className="text-[11px]" style={{ color: '#555570' }}>
+                  <span className="text-[11px]" style={{ color: 'var(--sp-text-tertiary)' }}>
                     {timeAgo(svc.lastUpdated)}
                   </span>
                 ) : null}
@@ -138,20 +138,20 @@ export function CollapsibleServiceTable({ groups }: Props) {
               type="button"
               onClick={() => toggleGroup(group.providerId)}
               className="w-full flex items-center px-4 py-3 transition-colors hover:bg-white/[0.02] cursor-pointer"
-              style={{ background: '#0F0F17', borderBottom: '1px solid #1E1E2A' }}
+              style={{ background: 'var(--muted)', borderBottom: '1px solid var(--border)' }}
             >
               <div className="flex items-center gap-2.5" style={{ width: 280, minWidth: 0 }}>
                 {isCollapsed
-                  ? <ChevronRight className="h-3.5 w-3.5 flex-shrink-0" style={{ color: '#8888A0' }} />
-                  : <ChevronDown className="h-3.5 w-3.5 flex-shrink-0" style={{ color: '#8888A0' }} />
+                  ? <ChevronRight className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--muted-foreground)' }} />
+                  : <ChevronDown className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--muted-foreground)' }} />
                 }
                 <ProviderIcon providerId={group.providerId} size={22} />
-                <span className="text-[13px] font-semibold" style={{ color: '#F0F0F5' }}>
+                <span className="text-[13px] font-semibold" style={{ color: 'var(--foreground)' }}>
                   {group.providerName}
                 </span>
                 <span
                   className="rounded-full text-[10px] font-medium px-2 py-0.5"
-                  style={{ background: '#1A1A24', color: '#8888A0' }}
+                  style={{ background: 'var(--sp-bg-elevated)', color: 'var(--muted-foreground)' }}
                 >
                   {group.services.length} projects
                 </span>
@@ -164,7 +164,7 @@ export function CollapsibleServiceTable({ groups }: Props) {
               </div>
               <div style={{ minWidth: 80, textAlign: 'right' }}>
                 {groupLastUpdated ? (
-                  <span className="text-[11px]" style={{ color: '#555570' }}>
+                  <span className="text-[11px]" style={{ color: 'var(--sp-text-tertiary)' }}>
                     {timeAgo(groupLastUpdated)}
                   </span>
                 ) : null}
@@ -184,11 +184,11 @@ export function CollapsibleServiceTable({ groups }: Props) {
                     paddingRight: 16,
                     paddingTop: 10,
                     paddingBottom: 10,
-                    borderBottom: isSubLast ? undefined : '1px solid #1E1E2A',
+                    borderBottom: isSubLast ? undefined : '1px solid var(--border)',
                   }}
                 >
                   <div className="flex flex-col gap-0.5" style={{ width: 238, minWidth: 0 }}>
-                    <span className="text-xs font-medium truncate" style={{ color: '#F0F0F5' }}>
+                    <span className="text-xs font-medium truncate" style={{ color: 'var(--foreground)' }}>
                       {svc.label}
                     </span>
                   </div>
@@ -200,7 +200,7 @@ export function CollapsibleServiceTable({ groups }: Props) {
                   </div>
                   <div style={{ minWidth: 80, textAlign: 'right' }}>
                     {svc.lastUpdated ? (
-                      <span className="text-[11px]" style={{ color: '#555570' }}>
+                      <span className="text-[11px]" style={{ color: 'var(--sp-text-tertiary)' }}>
                         {timeAgo(svc.lastUpdated)}
                       </span>
                     ) : null}

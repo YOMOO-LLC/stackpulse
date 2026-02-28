@@ -10,7 +10,7 @@ export function Sparkline({
   values,
   width = 80,
   height = 24,
-  color = '#10b981',
+  color = 'var(--sp-success)',
   className = '',
 }: SparklineProps) {
   if (values.length === 0) {

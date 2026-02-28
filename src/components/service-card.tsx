@@ -64,7 +64,7 @@ function MetricDisplay({ collector }: { collector: CollectorDisplay }) {
             values={history}
             width={72}
             height={28}
-            color={isCritical ? '#ef4444' : isWarning ? '#f59e0b' : '#10b981'}
+            color={isCritical ? 'var(--sp-error)' : isWarning ? 'var(--sp-warning)' : 'var(--sp-success)'}
             className="opacity-80"
           />
         )}

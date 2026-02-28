@@ -37,6 +37,7 @@ export interface Collector {
   displayHint?: DisplayHint
   thresholds?: CollectorThresholds
   trend?: boolean
+  section?: string
 }
 
 export interface ApiKeyAuth { type: 'api_key' }
@@ -58,6 +59,17 @@ export interface KeyGuide {
   steps: string[]
 }
 
+export interface ProjectOption {
+  value: string
+  label: string
+}
+
+export interface ProjectSelector {
+  key: string
+  label: string
+  fetch: (credentials: Record<string, string>) => Promise<ProjectOption[]>
+}
+
 export interface ServiceProvider {
   id: string
   name: string
@@ -71,6 +83,7 @@ export interface ServiceProvider {
   mockFetchMetrics?: () => Promise<SnapshotResult[]>
   metricsLayout?: 'cards' | 'stats-grid'
   keyGuide?: KeyGuide
+  projectSelector?: ProjectSelector
 }
 
 export const VALID_METRIC_TYPES: MetricType[] = ['currency', 'percentage', 'count', 'status', 'boolean']

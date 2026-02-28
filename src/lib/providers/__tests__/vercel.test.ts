@@ -26,60 +26,57 @@ const mockDeployments = (deployments: Array<{ readyState: string }>) => ({
   }),
 } as Response)
 
-const mockProjects = (projects: Array<{ aliases?: string[] }>) => ({
+const mockProjects = (count: number) => ({
   ok: true,
   json: async () => ({
-    projects: projects.map((p, i) => ({
+    projects: Array.from({ length: count }, (_, i) => ({
       id: `proj-${i}`,
       name: `project-${i}`,
-      alias: p.aliases ?? [],
     })),
     pagination: {},
   }),
 } as Response)
 
-const mockUsage = (value: number) => ({
+const mockUsage = (invocations: number) => ({
   ok: true,
-  json: async () => ({ edgeUsage: { gb: value } }),
+  json: async () => ({
+    data: [{ worker_invocation_count: invocations }],
+  }),
 } as Response)
 
-const mockRequests = (value: number) => ({
-  ok: true,
-  json: async () => ({ requestsUsage: { total: value } }),
+const mockUsageFail = () => ({
+  ok: false,
+  status: 400,
 } as Response)
 
 describe('fetchVercelMetrics', () => {
   beforeEach(() => { vi.resetAllMocks() })
 
-  it('returns all 4 metrics correctly when all APIs succeed', async () => {
+  it('returns all metrics correctly when all APIs succeed', async () => {
     vi.mocked(global.fetch)
       .mockResolvedValueOnce(mockUser('team-1'))                         // /v2/user
-      .mockResolvedValueOnce(mockProjects([                              // /v9/projects
-        { aliases: ['example.com', 'www.example.com'] },
-        { aliases: ['api.myapp.com'] },
-      ]))
-      .mockResolvedValueOnce(mockDeployments([                           // /v9/deployments
+      .mockResolvedValueOnce(mockProjects(5))                            // /v9/projects
+      .mockResolvedValueOnce(mockDeployments([                           // /v6/deployments
         { readyState: 'READY' },
         { readyState: 'READY' },
         { readyState: 'BUILDING' },
       ]))
-      .mockResolvedValueOnce(mockUsage(4.2))                             // /v2/usage?type=edge
-      .mockResolvedValueOnce(mockRequests(128000))                       // /v2/usage?type=requests
+      .mockResolvedValueOnce(mockUsage(128000))                          // /v2/usage
 
     const result = await fetchVercelMetrics('vercel_token')
 
     expect(result.deployments24h).toBe(3)
     expect(result.deployments24hBreakdown).toEqual({ ready: 2, building: 1, error: 0 })
-    expect(result.bandwidthUsed).toBe(4.2)
     expect(result.serverlessInvocations).toBe(128000)
-    expect(result.activeDomains).toBe(3)
+    expect(result.projectCount).toBe(5)
+    expect(result.deploySuccessRate).toBe(67) // Math.round(2/3 * 100)
     expect(result.status).toBe('healthy')
   })
 
   it('counts deployments by readyState (ready/building/error)', async () => {
     vi.mocked(global.fetch)
       .mockResolvedValueOnce(mockUser('team-1'))
-      .mockResolvedValueOnce(mockProjects([]))
+      .mockResolvedValueOnce(mockProjects(0))
       .mockResolvedValueOnce(mockDeployments([
         { readyState: 'READY' },
         { readyState: 'READY' },
@@ -88,8 +85,7 @@ describe('fetchVercelMetrics', () => {
         { readyState: 'ERROR' },
         { readyState: 'READY' },
       ]))
-      .mockResolvedValueOnce(mockUsage(1.0))
-      .mockResolvedValueOnce(mockRequests(500))
+      .mockResolvedValueOnce(mockUsage(500))
 
     const result = await fetchVercelMetrics('vercel_token')
 
@@ -97,21 +93,43 @@ describe('fetchVercelMetrics', () => {
     expect(result.deployments24hBreakdown).toEqual({ ready: 3, building: 1, error: 2 })
   })
 
-  it('counts active domains excluding .vercel.app aliases', async () => {
+  it('returns projectCount from projects array length', async () => {
     vi.mocked(global.fetch)
       .mockResolvedValueOnce(mockUser('team-1'))
-      .mockResolvedValueOnce(mockProjects([
-        { aliases: ['example.com', 'proj-0.vercel.app'] },
-        { aliases: ['api.mysite.com', 'proj-1.vercel.app', 'cdn.mysite.com'] },
-        { aliases: ['proj-2.vercel.app'] },  // only vercel.app → not counted
-      ]))
+      .mockResolvedValueOnce(mockProjects(12))
       .mockResolvedValueOnce(mockDeployments([]))
       .mockResolvedValueOnce(mockUsage(0))
-      .mockResolvedValueOnce(mockRequests(0))
 
     const result = await fetchVercelMetrics('vercel_token')
 
-    expect(result.activeDomains).toBe(3) // example.com, api.mysite.com, cdn.mysite.com
+    expect(result.projectCount).toBe(12)
+  })
+
+  it('deploySuccessRate is 100 when no deployments', async () => {
+    vi.mocked(global.fetch)
+      .mockResolvedValueOnce(mockUser('team-1'))
+      .mockResolvedValueOnce(mockProjects(1))
+      .mockResolvedValueOnce(mockDeployments([]))
+      .mockResolvedValueOnce(mockUsage(0))
+
+    const result = await fetchVercelMetrics('vercel_token')
+
+    expect(result.deploySuccessRate).toBe(100)
+  })
+
+  it('deploySuccessRate is 0 when all deployments fail', async () => {
+    vi.mocked(global.fetch)
+      .mockResolvedValueOnce(mockUser('team-1'))
+      .mockResolvedValueOnce(mockProjects(1))
+      .mockResolvedValueOnce(mockDeployments([
+        { readyState: 'ERROR' },
+        { readyState: 'ERROR' },
+      ]))
+      .mockResolvedValueOnce(mockUsage(0))
+
+    const result = await fetchVercelMetrics('vercel_token')
+
+    expect(result.deploySuccessRate).toBe(0)
   })
 
   it('returns unknown on API error', async () => {
@@ -121,47 +139,41 @@ describe('fetchVercelMetrics', () => {
 
     expect(result.status).toBe('unknown')
     expect(result.deployments24h).toBeNull()
-    expect(result.bandwidthUsed).toBeNull()
+    expect(result.projectCount).toBeNull()
+    expect(result.deploySuccessRate).toBeNull()
     expect(result.serverlessInvocations).toBeNull()
-    expect(result.activeDomains).toBeNull()
   })
 
   it('falls back to /v2/teams when user has no defaultTeamId', async () => {
     vi.mocked(global.fetch)
       .mockResolvedValueOnce(mockUser(null))                             // /v2/user → no defaultTeamId
       .mockResolvedValueOnce(mockTeams('team-xyz'))                      // /v2/teams → fallback
-      .mockResolvedValueOnce(mockProjects([{ aliases: ['site.com'] }]))  // /v9/projects
-      .mockResolvedValueOnce(mockDeployments([{ readyState: 'READY' }])) // /v9/deployments
-      .mockResolvedValueOnce(mockUsage(2.0))                             // /v2/usage?type=edge
-      .mockResolvedValueOnce(mockRequests(1000))                         // /v2/usage?type=requests
+      .mockResolvedValueOnce(mockProjects(3))                            // /v9/projects
+      .mockResolvedValueOnce(mockDeployments([{ readyState: 'READY' }])) // /v6/deployments
+      .mockResolvedValueOnce(mockUsage(1000))                            // /v2/usage
 
     const result = await fetchVercelMetrics('vercel_token')
 
     const calls = vi.mocked(global.fetch).mock.calls
-    // Should have called /v2/teams
     expect(calls.some(c => String(c[0]).includes('/v2/teams'))).toBe(true)
-    // Projects call should use the fallback teamId
     const projCall = calls.find(c => String(c[0]).includes('projects'))
     expect(projCall?.[0]).toContain('teamId=team-xyz')
-    // Deployments call should use the fallback teamId
-    const depCall = calls.find(c => String(c[0]).includes('deployments'))
-    expect(depCall?.[0]).toContain('teamId=team-xyz')
 
-    expect(result.activeDomains).toBe(1)
+    expect(result.projectCount).toBe(3)
     expect(result.deployments24h).toBe(1)
+    expect(result.deploySuccessRate).toBe(100)
   })
 
   it('status is warning when 1-2 error deployments', async () => {
     vi.mocked(global.fetch)
       .mockResolvedValueOnce(mockUser('team-1'))
-      .mockResolvedValueOnce(mockProjects([]))
+      .mockResolvedValueOnce(mockProjects(0))
       .mockResolvedValueOnce(mockDeployments([
         { readyState: 'READY' },
         { readyState: 'ERROR' },
         { readyState: 'ERROR' },
       ]))
-      .mockResolvedValueOnce(mockUsage(10.0))
-      .mockResolvedValueOnce(mockRequests(5000))
+      .mockResolvedValueOnce(mockUsage(5000))
 
     const result = await fetchVercelMetrics('vercel_token')
 
@@ -172,15 +184,14 @@ describe('fetchVercelMetrics', () => {
   it('status is critical when 3+ error deployments', async () => {
     vi.mocked(global.fetch)
       .mockResolvedValueOnce(mockUser('team-1'))
-      .mockResolvedValueOnce(mockProjects([]))
+      .mockResolvedValueOnce(mockProjects(0))
       .mockResolvedValueOnce(mockDeployments([
         { readyState: 'ERROR' },
         { readyState: 'ERROR' },
         { readyState: 'ERROR' },
         { readyState: 'READY' },
       ]))
-      .mockResolvedValueOnce(mockUsage(10.0))
-      .mockResolvedValueOnce(mockRequests(5000))
+      .mockResolvedValueOnce(mockUsage(5000))
 
     const result = await fetchVercelMetrics('vercel_token')
 
@@ -188,31 +199,37 @@ describe('fetchVercelMetrics', () => {
     expect(result.status).toBe('critical')
   })
 
-  it('status is critical when bandwidth > 90', async () => {
+  it('sums worker_invocation_count across multiple days', async () => {
     vi.mocked(global.fetch)
       .mockResolvedValueOnce(mockUser('team-1'))
-      .mockResolvedValueOnce(mockProjects([]))
+      .mockResolvedValueOnce(mockProjects(0))
       .mockResolvedValueOnce(mockDeployments([{ readyState: 'READY' }]))
-      .mockResolvedValueOnce(mockUsage(95.0))
-      .mockResolvedValueOnce(mockRequests(5000))
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: [
+            { worker_invocation_count: 500 },
+            { worker_invocation_count: 300 },
+            { worker_invocation_count: 200 },
+          ],
+        }),
+      } as Response)
 
     const result = await fetchVercelMetrics('vercel_token')
 
-    expect(result.bandwidthUsed).toBe(95.0)
-    expect(result.status).toBe('critical')
+    expect(result.serverlessInvocations).toBe(1000)
   })
 
-  it('status is warning when bandwidth between 70 and 90', async () => {
+  it('returns null serverlessInvocations when usage API fails', async () => {
     vi.mocked(global.fetch)
       .mockResolvedValueOnce(mockUser('team-1'))
-      .mockResolvedValueOnce(mockProjects([]))
+      .mockResolvedValueOnce(mockProjects(0))
       .mockResolvedValueOnce(mockDeployments([{ readyState: 'READY' }]))
-      .mockResolvedValueOnce(mockUsage(75.0))
-      .mockResolvedValueOnce(mockRequests(5000))
+      .mockResolvedValueOnce(mockUsageFail())
 
     const result = await fetchVercelMetrics('vercel_token')
 
-    expect(result.bandwidthUsed).toBe(75.0)
-    expect(result.status).toBe('warning')
+    expect(result.serverlessInvocations).toBeNull()
+    expect(result.status).toBe('healthy')
   })
 })
