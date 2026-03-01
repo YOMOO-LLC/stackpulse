@@ -13,6 +13,7 @@ type Status = 'healthy' | 'warning' | 'critical' | 'unknown'
 interface AppSidebarProps {
   userEmail: string
   alertCount?: number
+  planName?: string
 }
 
 const NAV_ITEMS = [
@@ -24,7 +25,7 @@ const NAV_ITEMS = [
   { label: 'Settings',  href: '/dashboard/channels',icon: Settings2       },
 ]
 
-export function AppSidebar({ userEmail, alertCount = 0 }: AppSidebarProps) {
+export function AppSidebar({ userEmail, alertCount = 0, planName = 'Free Plan' }: AppSidebarProps) {
   const pathname = usePathname()
 
   function isActive(label: string) {
@@ -107,7 +108,7 @@ export function AppSidebar({ userEmail, alertCount = 0 }: AppSidebarProps) {
             {userEmail}
           </span>
           <span className="text-[10px]" style={{ color: 'var(--sp-text-tertiary)' }}>
-            Free Plan
+            {planName}
           </span>
         </div>
         <ThemeToggle />

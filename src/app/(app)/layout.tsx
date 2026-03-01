@@ -9,6 +9,20 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   if (!user) redirect('/login')
 
+  // Fetch user's subscription plan for sidebar display
+  const { data: subscription } = await supabase
+    .from('subscriptions')
+    .select('plan')
+    .eq('user_id', user.id)
+    .single()
+
+  const planDisplayNames: Record<string, string> = {
+    free: 'Free Plan',
+    pro: 'Pro Plan',
+    business: 'Business Plan',
+  }
+  const planName = planDisplayNames[subscription?.plan ?? 'free']
+
   // Count recent alert events (last 24h) for sidebar badge
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
   const { data: services } = await supabase
@@ -38,7 +52,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex min-h-screen" style={{ background: 'var(--background)' }}>
-      <AppSidebar userEmail={user.email ?? ''} alertCount={alertCount} />
+      <AppSidebar userEmail={user.email ?? ''} alertCount={alertCount} planName={planName} />
       <main className="flex-1 overflow-y-auto">
         {children}
       </main>
