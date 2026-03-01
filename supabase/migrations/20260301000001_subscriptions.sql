@@ -3,8 +3,9 @@ CREATE TABLE public.subscriptions (
   user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL UNIQUE,
   plan text NOT NULL DEFAULT 'free' CHECK (plan IN ('free', 'pro', 'business')),
   billing_cycle text CHECK (billing_cycle IN ('monthly', 'yearly')),
-  stripe_customer_id text,
-  stripe_subscription_id text,
+  ls_customer_id text,
+  ls_subscription_id text,
+  ls_variant_id text,
   current_period_end timestamptz,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
