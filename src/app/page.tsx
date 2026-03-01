@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
-import { Activity, Grid3x3, Bell, ShieldCheck, Zap, Play } from 'lucide-react'
+import { Activity, Grid3x3, Bell, ShieldCheck, Zap, Play, Check } from 'lucide-react'
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 
@@ -46,6 +46,54 @@ const FEATURES = [
   },
 ]
 
+const PRICING_PLANS = [
+  {
+    name: 'Free',
+    price: '$0',
+    highlighted: false,
+    features: [
+      '3 services',
+      'Hourly polling',
+      '3 alert rules',
+      'Email notifications',
+      '7-day retention',
+    ],
+    cta: 'Start Free',
+    href: '/login',
+  },
+  {
+    name: 'Pro',
+    price: '$4.99',
+    highlighted: true,
+    badge: 'Popular',
+    features: [
+      '15 services',
+      '15min polling',
+      '3 team members',
+      '20 alert rules',
+      'Email + Slack',
+      '30-day retention',
+    ],
+    cta: 'Get Started',
+    href: '/login',
+  },
+  {
+    name: 'Business',
+    price: '$19.99',
+    highlighted: false,
+    features: [
+      'Unlimited services',
+      '5min polling',
+      '10 team members',
+      'Unlimited alert rules',
+      'All channels',
+      '90-day retention',
+    ],
+    cta: 'Get Started',
+    href: '/login',
+  },
+]
+
 const FOOTER_COLS: Record<string, string[]> = {
   Product:   ['Features', 'Integrations', 'Pricing', 'Changelog'],
   Company:   ['About', 'Blog', 'Careers', 'Contact'],
@@ -72,7 +120,7 @@ export default async function LandingPage() {
 
         <nav className="hidden md:flex items-center gap-8">
           {NAV_LINKS.map((l) => (
-            <a key={l} href="#" className="text-sm transition-colors hover:text-foreground"
+            <a key={l} href={l === 'Pricing' ? '#pricing' : '#'} className="text-sm transition-colors hover:text-foreground"
                style={{ color: 'var(--muted-foreground)' }}>
               {l}
             </a>
@@ -356,6 +404,106 @@ export default async function LandingPage() {
                     {f.description}
                   </p>
                 </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ── Pricing ──────────────────────────────────────────────────────── */}
+        <section
+          id="pricing"
+          className="flex flex-col items-center px-14 py-20"
+          style={{ background: 'var(--background)' }}
+        >
+          <span
+            className="text-xs font-semibold tracking-widest uppercase px-3 py-1 rounded-full mb-6"
+            style={{ background: 'var(--sp-success-muted)', color: 'var(--primary)' }}
+          >
+            Pricing
+          </span>
+
+          <h2
+            className="text-4xl font-bold text-center mb-4 max-w-xl"
+            style={{ color: 'var(--foreground)' }}
+          >
+            Simple, transparent pricing
+          </h2>
+          <p
+            className="text-base text-center leading-relaxed mb-14 max-w-2xl"
+            style={{ color: 'var(--muted-foreground)' }}
+          >
+            Start free and scale as you grow. No hidden fees, no surprises.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl">
+            {PRICING_PLANS.map((plan) => (
+              <div
+                key={plan.name}
+                className="relative flex flex-col rounded-xl p-6"
+                style={{
+                  background: 'var(--card)',
+                  border: plan.highlighted
+                    ? '2px solid var(--primary)'
+                    : '1px solid var(--border)',
+                }}
+              >
+                {plan.highlighted && 'badge' in plan && (
+                  <span
+                    className="absolute -top-3 left-1/2 -translate-x-1/2 text-xs font-semibold px-3 py-0.5 rounded-full"
+                    style={{
+                      background: 'var(--primary)',
+                      color: 'var(--primary-foreground)',
+                    }}
+                  >
+                    {plan.badge}
+                  </span>
+                )}
+
+                <h3
+                  className="text-lg font-semibold mb-1"
+                  style={{ color: 'var(--foreground)' }}
+                >
+                  {plan.name}
+                </h3>
+
+                <div className="flex items-baseline gap-1 mb-6">
+                  <span
+                    className="text-4xl font-bold"
+                    style={{ color: 'var(--foreground)' }}
+                  >
+                    {plan.price}
+                  </span>
+                  <span
+                    className="text-sm"
+                    style={{ color: 'var(--muted-foreground)' }}
+                  >
+                    /month
+                  </span>
+                </div>
+
+                <ul className="flex flex-col gap-3 mb-8 flex-1">
+                  {plan.features.map((feature) => (
+                    <li
+                      key={feature}
+                      className="flex items-center gap-2 text-sm"
+                      style={{ color: 'var(--muted-foreground)' }}
+                    >
+                      <Check
+                        className="size-4 flex-shrink-0"
+                        style={{ color: 'var(--primary)' }}
+                      />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+
+                <Button
+                  variant={plan.highlighted ? 'default' : 'outline'}
+                  className="w-full"
+                  asChild
+                >
+                  <Link href={plan.href}>{plan.cta}</Link>
+                </Button>
               </div>
             ))}
           </div>
