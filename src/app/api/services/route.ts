@@ -4,6 +4,7 @@ import { getProvider } from '@/lib/providers'
 import { encrypt } from '@/lib/crypto'
 import { registerServiceSchedule } from '@/lib/qstash'
 import { fetchProviderMetrics } from '@/lib/providers/fetch'
+import { getUserPlan } from '@/lib/subscription'
 
 interface Snapshot {
   connected_service_id: string
@@ -72,6 +73,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  // Enforce service count limit per subscription plan
+  const { limits } = await getUserPlan(user.id)
+  const { count } = await supabase
+    .from('connected_services')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', user.id)
+
+  if ((count ?? 0) >= limits.maxServices) {
+    return NextResponse.json(
+      { error: `Plan limit reached: max ${limits.maxServices} services. Upgrade to add more.` },
+      { status: 403 },
+    )
+  }
+
   const body = await req.json()
   const { providerId, credentials, label } = body
 
@@ -121,7 +136,7 @@ export async function POST(req: NextRequest) {
 
   // Register QStash schedule for recurring polling
   try {
-    const scheduleId = await registerServiceSchedule(data.id)
+    const scheduleId = await registerServiceSchedule(data.id, user.id)
     await supabase
       .from('connected_services')
       .update({ qstash_schedule_id: scheduleId })

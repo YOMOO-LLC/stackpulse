@@ -9,11 +9,25 @@ vi.mock('@upstash/qstash', () => ({
   },
 }))
 
+vi.mock('@/lib/subscription', () => ({
+  getUserPlan: vi.fn().mockResolvedValue({
+    plan: 'free',
+    limits: {
+      maxServices: 3,
+      pollCron: '0 * * * *',
+      maxAlertRules: 3,
+      maxTeamMembers: 1,
+      retentionDays: 7,
+      channels: ['email'],
+    },
+  }),
+}))
+
 import { registerServiceSchedule, unregisterServiceSchedule } from '../qstash'
 
 describe('registerServiceSchedule', () => {
   it('returns a scheduleId', async () => {
-    const id = await registerServiceSchedule('svc-1')
+    const id = await registerServiceSchedule('svc-1', 'user-1')
     expect(id).toBe('qs-abc')
   })
 })

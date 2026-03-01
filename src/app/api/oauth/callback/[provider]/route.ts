@@ -107,7 +107,7 @@ export async function GET(
 
     // Register QStash schedule (non-fatal)
     try {
-      const scheduleId = await registerServiceSchedule(data.id)
+      const scheduleId = await registerServiceSchedule(data.id, user.id)
       await supabase
         .from('connected_services')
         .update({ qstash_schedule_id: scheduleId })

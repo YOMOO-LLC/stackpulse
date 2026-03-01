@@ -28,7 +28,7 @@ export async function PATCH(
 
   let scheduleId: string | undefined
   try {
-    scheduleId = await registerServiceSchedule(id)
+    scheduleId = await registerServiceSchedule(id, user.id)
   } catch { /* non-fatal */ }
 
   const { error } = await supabase
