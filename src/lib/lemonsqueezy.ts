@@ -1,6 +1,7 @@
 import {
   lemonSqueezySetup,
   createCheckout,
+  updateSubscription,
   type Checkout,
 } from '@lemonsqueezy/lemonsqueezy.js'
 
@@ -18,5 +19,5 @@ export const VARIANT_TO_PLAN: Record<string, { plan: string; cycle: string }> = 
   [process.env.LS_BUSINESS_YEARLY_VARIANT_ID ?? '']: { plan: 'business', cycle: 'yearly' },
 }
 
-export { createCheckout }
+export { createCheckout, updateSubscription }
 export type { Checkout }

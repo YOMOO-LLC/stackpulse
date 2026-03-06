@@ -57,72 +57,71 @@
   --color-sp-text-tertiary: var(--sp-text-tertiary);
 }
 
-/* ─── Dark-first design system — aligned with SP Design System (Pencil) ─── */
+/* ─── Light-first design system — aligned with SP Design System (Pencil) ─── */
 :root {
   --radius: 0.625rem;
 
-  /* Background layers — deep space palette */
-  --background:    #0A0A0F;   /* deep space black */
-  --foreground:    #F0F0F5;   /* soft lavender white */
+  --background:    #FAFAFA;
+  --foreground:    #111118;
 
-  --card:          #111118;   /* dark navy card */
-  --card-foreground: #F0F0F5;
+  --card:          #FFFFFF;
+  --card-foreground: #111118;
 
-  --popover:       #111118;
-  --popover-foreground: #F0F0F5;
+  --popover:       #FFFFFF;
+  --popover-foreground: #111118;
 
   /* Primary — Emerald */
-  --primary:       #10B981;   /* emerald-500 */
-  --primary-foreground: #022C22; /* dark emerald */
+  --primary:       #059669;   /* emerald-600 — slightly darker for light bg */
+  --primary-foreground: #FFFFFF;
 
   /* Secondary */
-  --secondary:     #1A1A24;   /* dark navy */
-  --secondary-foreground: #F0F0F5;
+  --secondary:     #F1F5F9;
+  --secondary-foreground: #1E293B;
 
-  --muted:         #16161F;   /* darker navy */
-  --muted-foreground: #8888A0; /* purple-tinted gray */
+  --muted:         #F1F5F9;
+  --muted-foreground: #64748B;
 
-  --accent:        #1A1A24;   /* dark navy */
-  --accent-foreground: #F0F0F5;
+  --accent:        #F1F5F9;
+  --accent-foreground: #1E293B;
 
   /* Destructive */
-  --destructive:   #EF4444;   /* red-500 */
+  --destructive:   #DC2626;
 
   /* Border / Input */
-  --border:        #1E1E2A;   /* dark navy border */
-  --input:         #1E1E2A;
-  --ring:          #10B98166; /* emerald 40% alpha */
+  --border:        #E2E8F0;
+  --input:         #E2E8F0;
+  --ring:          #05966666;
 
   /* Chart colors */
-  --chart-1: #10B981;
+  --chart-1: #059669;
   --chart-2: oklch(0.769 0.188 70.08);
   --chart-3: oklch(0.646 0.222 41.116);
   --chart-4: oklch(0.6 0.118 184.704);
   --chart-5: oklch(0.488 0.243 264.376);
 
   /* Sidebar */
-  --sidebar:                   #08080C;   /* near-black sidebar */
-  --sidebar-foreground:        #F0F0F5;
-  --sidebar-primary:           #10B981;
-  --sidebar-primary-foreground: #F0F0F5;
-  --sidebar-accent:            #10B98118; /* emerald 9% alpha */
-  --sidebar-accent-foreground: #F0F0F5;
-  --sidebar-border:            #1E1E2A;
-  --sidebar-ring:              #10B98166; /* emerald 40% alpha */
+  --sidebar:                   #FFFFFF;
+  --sidebar-foreground:        #111118;
+  --sidebar-primary:           #059669;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent:            #05966612;
+  --sidebar-accent-foreground: #111118;
+  --sidebar-border:            #E2E8F0;
+  --sidebar-ring:              #05966666;
 
   /* SP semantic tokens */
-  --sp-bg-elevated:   #1A1A24;
-  --sp-success:       #10B981;
-  --sp-success-muted: #10B98120; /* emerald 12% alpha */
-  --sp-warning:       #F59E0B;
-  --sp-warning-muted: #F59E0B20;
-  --sp-error:         #EF4444;
-  --sp-error-muted:   #EF444420;
-  --sp-info:          #3B82F6;
-  --sp-info-muted:    #3B82F620;
-  --sp-glow:          #10B98130; /* emerald 19% alpha */
-  --sp-glow-error:    #EF444433; /* red 20% alpha */
-  --sp-text-tertiary: #555570;
+  --sp-bg-elevated:   #FFFFFF;
+  --sp-success:       #059669;
+  --sp-success-muted: #05966618;
+  --sp-warning:       #D97706;
+  --sp-warning-muted: #D9770618;
+  --sp-error:         #DC2626;
+  --sp-error-muted:   #DC262618;
+  --sp-info:          #2563EB;
+  --sp-info-muted:    #2563EB18;
+  --sp-glow:          #05966620;
+  --sp-glow-error:    #DC262630;
+  --sp-text-tertiary: #94A3B8;
 }
 
 /* ─── Light theme ─── */

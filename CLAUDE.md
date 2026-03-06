@@ -13,6 +13,8 @@ npm run lint     # Run ESLint
 
 Dev server: http://localhost:4567 (not the default port 3000)
 
+**Local Supabase runs on port 34321** (not the default 54321). API base: `http://127.0.0.1:34321`
+
 ## Tech Stack
 
 - **Next.js 16.1.6** (App Router) + **React 19.2.3**

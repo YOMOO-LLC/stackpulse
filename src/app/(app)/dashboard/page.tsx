@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { getProvider } from '@/lib/providers'
 import {
   Server, CheckCircle, TriangleAlert, CircleX, CircleCheck,
-  Search, Plus, TrendingUp,
+  Search, Plus, TrendingUp, ArrowUpRight,
 } from 'lucide-react'
 import {
   timeAgo, formatAlertTitle, pickKeyMetrics,
@@ -12,6 +12,9 @@ import {
 } from './helpers'
 import { ProviderIcon } from '@/components/provider-icon'
 import { DemoBanner } from '@/components/demo-banner'
+import { UpgradeBanner } from '@/components/upgrade-banner'
+import { getUserPlan } from '@/lib/subscription'
+import { formatUsage, isAtLimit, getAddServiceAction } from './plan-helpers'
 
 type Status = 'healthy' | 'warning' | 'critical' | 'unknown'
 
@@ -49,9 +52,23 @@ function formatMetricValue(snapshot: CollectorRow['snapshot']): string {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ upgraded?: string }>
+}) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+
+  // Plan data
+  const { plan, limits } = await getUserPlan(user!.id)
+  const maxServices = limits.maxServices
+  const planDisplayNames: Record<string, string> = { free: 'Free', pro: 'Pro', business: 'Business' }
+  const planLabel = planDisplayNames[plan] ?? plan
+
+  // Upgraded toast
+  const params = await searchParams
+  const showUpgraded = params.upgraded === 'true'
 
   // ── Services ─────────────────────────────────────────────────────────────
   const { data: services } = await supabase
@@ -167,6 +184,8 @@ export default async function DashboardPage() {
       style={{ padding: '28px 32px', background: 'var(--background)', minHeight: '100%' }}
     >
 
+      {showUpgraded && <UpgradeBanner planName={planLabel} />}
+
       {user?.email === process.env.NEXT_PUBLIC_DEMO_EMAIL && (
         <DemoBanner />
       )}
@@ -192,16 +211,28 @@ export default async function DashboardPage() {
             <Search className="h-4 w-4 flex-shrink-0" />
             <span>Search...</span>
           </div>
-          <Button
-            asChild
-            size="sm"
-            style={{ background: 'var(--primary)', color: 'var(--primary-foreground)' }}
-          >
-            <Link href="/connect" className="flex items-center gap-1.5">
-              <Plus className="h-4 w-4" />
-              Add Service
-            </Link>
-          </Button>
+          {(() => {
+            const action = getAddServiceAction(totalCount, maxServices)
+            return (
+              <Button
+                asChild
+                size="sm"
+                style={{
+                  background: action.isUpgrade ? 'var(--primary)' : 'var(--primary)',
+                  color: 'var(--primary-foreground)',
+                }}
+              >
+                <Link href={action.href} className="flex items-center gap-1.5">
+                  {action.isUpgrade ? (
+                    <ArrowUpRight className="h-4 w-4" />
+                  ) : (
+                    <Plus className="h-4 w-4" />
+                  )}
+                  {action.label}
+                </Link>
+              </Button>
+            )
+          })()}
         </div>
       </div>
 
@@ -217,10 +248,23 @@ export default async function DashboardPage() {
             <Server className="h-4 w-4" style={{ color: 'var(--sp-text-tertiary)' }} />
           </div>
           <span className="text-3xl font-bold" style={{ color: 'var(--foreground)', letterSpacing: '-1px' }}>
-            {totalCount}
+            {formatUsage(totalCount, maxServices)}
           </span>
-          <span className="flex items-center gap-1 text-xs font-medium" style={{ color: 'var(--primary)' }}>
-            {servicesAddedThisWeek > 0 ? (
+          {isFinite(maxServices) && (
+            <div className="h-1 rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>
+              <div
+                className="h-full rounded-full transition-all"
+                style={{
+                  width: `${Math.min(Math.round((totalCount / maxServices) * 100), 100)}%`,
+                  background: isAtLimit(totalCount, maxServices) ? 'var(--sp-warning)' : 'var(--primary)',
+                }}
+              />
+            </div>
+          )}
+          <span className="flex items-center gap-1 text-xs font-medium" style={{ color: isAtLimit(totalCount, maxServices) ? 'var(--sp-warning)' : 'var(--primary)' }}>
+            {isAtLimit(totalCount, maxServices) ? (
+              'Limit reached'
+            ) : servicesAddedThisWeek > 0 ? (
               <>
                 <TrendingUp className="h-3.5 w-3.5" />
                 +{servicesAddedThisWeek} this week
@@ -409,6 +453,35 @@ export default async function DashboardPage() {
                 </Link>
               )
             })}
+
+            {/* Upgrade prompt card when at service limit */}
+            {isAtLimit(totalCount, maxServices) && (
+              <Link
+                href="/dashboard/billing"
+                className="flex flex-col items-center justify-center gap-3 rounded-xl transition-colors hover:border-primary/40"
+                style={{
+                  border: '2px dashed var(--border)',
+                  padding: 18,
+                  minHeight: 160,
+                }}
+              >
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center"
+                  style={{ background: 'var(--sp-bg-elevated)' }}
+                >
+                  <ArrowUpRight className="h-5 w-5" style={{ color: 'var(--primary)' }} />
+                </div>
+                <p className="text-sm font-medium text-center" style={{ color: 'var(--muted-foreground)' }}>
+                  Need more services?
+                </p>
+                <span
+                  className="rounded-lg px-3 py-1.5 text-xs font-medium"
+                  style={{ background: 'var(--primary)', color: 'var(--primary-foreground)' }}
+                >
+                  Upgrade Plan
+                </span>
+              </Link>
+            )}
           </div>
         )}
       </section>

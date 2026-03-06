@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { decrypt, encrypt } from '@/lib/crypto'
 import { getOAuthConfig } from '@/lib/oauth/config'
 import { needsRefresh, refreshAccessToken } from '@/lib/oauth/refresh'
@@ -18,7 +18,11 @@ async function handler(req: NextRequest) {
     return NextResponse.json({ error: 'serviceId required' }, { status: 400 })
   }
 
-  const supabase = await createClient()
+  const supabase = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  )
 
   const { data: service } = await supabase
     .from('connected_services')

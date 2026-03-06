@@ -1,6 +1,6 @@
 import crypto from 'node:crypto'
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { VARIANT_TO_PLAN } from '@/lib/lemonsqueezy'
 
 export async function POST(req: NextRequest) {
@@ -32,7 +32,10 @@ export async function POST(req: NextRequest) {
   const attrs = payload.data.attributes
   const subscriptionId = String(payload.data.id)
 
-  const supabase = await createClient()
+  const supabase = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  )
 
   if (eventName === 'subscription_created' || eventName === 'subscription_updated') {
     if (!userId) {

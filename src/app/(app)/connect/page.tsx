@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import { getAllProviders } from '@/lib/providers'
 import { ProviderIcon } from '@/components/provider-icon'
+import { createClient } from '@/lib/supabase/server'
+import { getUserPlan } from '@/lib/subscription'
 
 // Provider descriptions (shown on cards)
 const DESCRIPTIONS: Record<string, string> = {
@@ -22,11 +24,45 @@ const AUTH_LABEL: Record<string, string> = {
   token:   'Token',
 }
 
-export default function ConnectPage() {
+export default async function ConnectPage() {
   const providers = getAllProviders()
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const { limits } = await getUserPlan(user!.id)
+  const { count: serviceCount } = await supabase
+    .from('connected_services')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', user!.id)
+
+  const atLimit = (serviceCount ?? 0) >= limits.maxServices
+  const showBanner = atLimit && limits.maxServices !== Infinity
 
   return (
     <div className="p-8 flex flex-col gap-6" style={{ background: 'var(--background)' }}>
+
+      {/* Limit warning banner */}
+      {showBanner && (
+        <div
+          className="flex items-center justify-between gap-4 px-4 py-3 rounded-lg text-sm"
+          style={{
+            background: 'color-mix(in srgb, #f59e0b 15%, transparent)',
+            border: '1px solid color-mix(in srgb, #f59e0b 30%, transparent)',
+            color: '#fbbf24',
+          }}
+        >
+          <span>
+            You&apos;ve used {serviceCount}/{limits.maxServices} services. Upgrade to connect more.
+          </span>
+          <Link
+            href="/dashboard/billing"
+            className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg"
+            style={{ background: '#f59e0b', color: '#000' }}
+          >
+            Upgrade
+          </Link>
+        </div>
+      )}
 
       {/* Header */}
       <div className="flex flex-col gap-1">
@@ -46,10 +82,18 @@ export default function ConnectPage() {
       {/* Provider grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {providers.map((provider) => (
-          <Link key={provider.id} href={`/connect/${provider.id}`} className="group block">
+          <Link
+            key={provider.id}
+            href={atLimit ? '/dashboard/billing' : `/connect/${provider.id}`}
+            className="group block"
+          >
             <div
               className="sp-provider-card flex flex-col gap-4 p-5 rounded-xl h-full transition-colors"
-              style={{ background: 'var(--card)', border: '1px solid var(--border)' }}
+              style={{
+                background: 'var(--card)',
+                border: '1px solid var(--border)',
+                opacity: atLimit ? 0.6 : 1,
+              }}
             >
               {/* Icon + name */}
               <div className="flex items-center gap-3">
@@ -78,15 +122,27 @@ export default function ConnectPage() {
                 >
                   {AUTH_LABEL[provider.authType] ?? provider.authType}
                 </span>
-                <span
-                  className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
-                  style={{
-                    background: 'var(--primary)',
-                    color: 'var(--primary-foreground)',
-                  }}
-                >
-                  Connect
-                </span>
+                {atLimit ? (
+                  <span
+                    className="text-xs font-semibold px-3 py-1.5 rounded-lg"
+                    style={{
+                      background: 'var(--muted)',
+                      color: 'var(--muted-foreground)',
+                    }}
+                  >
+                    Upgrade required
+                  </span>
+                ) : (
+                  <span
+                    className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+                    style={{
+                      background: 'var(--primary)',
+                      color: 'var(--primary-foreground)',
+                    }}
+                  >
+                    Connect
+                  </span>
+                )}
               </div>
             </div>
           </Link>

@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
-  LayoutDashboard, Server, Bell, Plug, Clock, Settings2, LogOut, Zap,
+  LayoutDashboard, Bell, Plug, Clock, Settings2, LogOut, Zap, CreditCard, ArrowUpRight,
 } from 'lucide-react'
 import { signOut } from '@/app/(auth)/login/actions'
 import { ThemeToggle } from '@/components/theme-toggle'
@@ -14,27 +14,28 @@ interface AppSidebarProps {
   userEmail: string
   alertCount?: number
   planName?: string
+  plan?: string
 }
 
 const NAV_ITEMS = [
   { label: 'Dashboard', href: '/dashboard',         icon: LayoutDashboard },
-  { label: 'Services',  href: '/dashboard',         icon: Server          },
   { label: 'Alerts',    href: '/dashboard/history', icon: Bell,  badge: true },
   { label: 'Connect',   href: '/connect',           icon: Plug            },
   { label: 'History',   href: '/dashboard/history', icon: Clock           },
   { label: 'Settings',  href: '/dashboard/channels',icon: Settings2       },
+  { label: 'Billing',   href: '/dashboard/billing', icon: CreditCard      },
 ]
 
-export function AppSidebar({ userEmail, alertCount = 0, planName = 'Free Plan' }: AppSidebarProps) {
+export function AppSidebar({ userEmail, alertCount = 0, planName = 'Free Plan', plan = 'free' }: AppSidebarProps) {
   const pathname = usePathname()
 
   function isActive(label: string) {
-    if (label === 'Dashboard') return pathname === '/dashboard'
-    if (label === 'Services')  return pathname.startsWith('/dashboard/') && pathname !== '/dashboard/history' && pathname !== '/dashboard/channels'
+    if (label === 'Dashboard') return pathname === '/dashboard' || (pathname.startsWith('/dashboard/') && pathname !== '/dashboard/history' && pathname !== '/dashboard/channels' && pathname !== '/dashboard/billing')
     if (label === 'Alerts')    return pathname === '/dashboard/history'
     if (label === 'History')   return false
     if (label === 'Connect')   return pathname.startsWith('/connect')
     if (label === 'Settings')  return pathname === '/dashboard/channels'
+    if (label === 'Billing')   return pathname === '/dashboard/billing'
     return false
   }
 
@@ -110,6 +111,15 @@ export function AppSidebar({ userEmail, alertCount = 0, planName = 'Free Plan' }
           <span className="text-[10px]" style={{ color: 'var(--sp-text-tertiary)' }}>
             {planName}
           </span>
+          {plan === 'free' && (
+            <Link
+              href="/dashboard/billing"
+              className="flex items-center gap-0.5 text-[10px] font-medium transition-colors hover:brightness-110"
+              style={{ color: 'var(--primary)' }}
+            >
+              Upgrade <ArrowUpRight className="h-2.5 w-2.5" />
+            </Link>
+          )}
         </div>
         <ThemeToggle />
         <form action={signOut}>

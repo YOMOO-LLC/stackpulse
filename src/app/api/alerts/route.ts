@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { getUserPlan } from '@/lib/subscription'
 
 export async function GET(req: NextRequest) {
   const supabase = await createClient()
@@ -30,6 +31,19 @@ export async function POST(req: NextRequest) {
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const { limits } = await getUserPlan(user.id)
+  const { count } = await supabase
+    .from('alert_configs')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', user.id)
+
+  if ((count ?? 0) >= limits.maxAlertRules) {
+    return NextResponse.json(
+      { error: `Plan limit reached: max ${limits.maxAlertRules} alert rules.` },
+      { status: 403 },
+    )
   }
 
   const body = await req.json()

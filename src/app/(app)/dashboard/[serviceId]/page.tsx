@@ -41,13 +41,26 @@ export default async function ServiceDetailPage({ params }: PageProps) {
     projectName = creds.project_name
   } catch { /* ignore decryption errors */ }
 
-  const since = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()
-  const { data: snapshots } = await supabase
+  // Fetch recent snapshots: try last 48h first, fall back to last 30 days if empty
+  const since48h = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()
+  const { data: recentSnapshots } = await supabase
     .from('metric_snapshots')
     .select('collector_id, value, value_text, unit, status, fetched_at')
     .eq('connected_service_id', serviceId)
-    .gte('fetched_at', since)
+    .gte('fetched_at', since48h)
     .order('fetched_at', { ascending: true })
+
+  let snapshots = recentSnapshots
+  if (!snapshots || snapshots.length === 0) {
+    const since30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+    const { data: olderSnapshots } = await supabase
+      .from('metric_snapshots')
+      .select('collector_id, value, value_text, unit, status, fetched_at')
+      .eq('connected_service_id', serviceId)
+      .gte('fetched_at', since30d)
+      .order('fetched_at', { ascending: true })
+    snapshots = olderSnapshots
+  }
 
   const serviceName = service.label ?? provider?.name ?? service.provider_id
 

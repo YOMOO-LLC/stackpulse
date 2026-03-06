@@ -52,7 +52,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex min-h-screen" style={{ background: 'var(--background)' }}>
-      <AppSidebar userEmail={user.email ?? ''} alertCount={alertCount} planName={planName} />
+      <AppSidebar userEmail={user.email ?? ''} alertCount={alertCount} planName={planName} plan={subscription?.plan ?? 'free'} />
       <main className="flex-1 overflow-y-auto">
         {children}
       </main>
