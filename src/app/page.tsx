@@ -5,9 +5,54 @@ import { Button } from '@/components/ui/button'
 import { Activity, Grid3x3, Bell, ShieldCheck, Zap, Play, Link2, BarChart3, Mail, Quote } from 'lucide-react'
 import { PricingSection } from '@/components/pricing-section'
 
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'WebSite',
+      name: 'StackPulse',
+      url: 'https://stackpulse.dev',
+      description: 'API monitoring dashboard for SaaS dependencies',
+    },
+    {
+      '@type': 'SoftwareApplication',
+      name: 'StackPulse',
+      applicationCategory: 'DeveloperApplication',
+      operatingSystem: 'Web',
+      offers: {
+        '@type': 'Offer',
+        price: '0',
+        priceCurrency: 'USD',
+        description: 'Free tier with 3 services and hourly polling',
+      },
+      description:
+        'Monitor API rate limits, credit balances, error counts, and deployment status across GitHub, Stripe, OpenAI, Vercel, and more.',
+      featureList: [
+        '11 provider integrations',
+        'API rate limit monitoring',
+        'Credit balance alerts',
+        'Deployment status tracking',
+        'Email and Slack notifications',
+        'AES-256-GCM credential encryption',
+      ],
+    },
+    {
+      '@type': 'Organization',
+      name: 'StackPulse',
+      url: 'https://stackpulse.dev',
+      logo: 'https://stackpulse.dev/icon.png',
+    },
+  ],
+}
+
 // ── Data ──────────────────────────────────────────────────────────────────────
 
-const NAV_LINKS = ['Features', 'Integrations', 'Pricing', 'Docs']
+const NAV_LINKS = [
+  { label: 'Features', href: '#features' },
+  { label: 'Integrations', href: '#features' },
+  { label: 'Pricing', href: '#pricing' },
+  { label: 'Docs', href: '#' },
+]
 
 const STATS = [
   { value: '11',     label: 'Supported Providers', emerald: false },
@@ -92,11 +137,30 @@ const TESTIMONIALS = [
   },
 ]
 
-const FOOTER_COLS: Record<string, string[]> = {
-  Product:   ['Features', 'Integrations', 'Pricing', 'Changelog'],
-  Company:   ['About', 'Blog', 'Careers', 'Contact'],
-  Resources: ['Documentation', 'API Reference', 'Status Page', 'Report'],
-  Legal:     ['Privacy Policy', 'Terms of Service', 'Security'],
+const FOOTER_COLS: Record<string, { label: string; href: string }[]> = {
+  Product: [
+    { label: 'Features', href: '#features' },
+    { label: 'Integrations', href: '#features' },
+    { label: 'Pricing', href: '#pricing' },
+    { label: 'Changelog', href: '#' },
+  ],
+  Company: [
+    { label: 'About', href: '#' },
+    { label: 'Blog', href: '#' },
+    { label: 'Careers', href: '#' },
+    { label: 'Contact', href: '#' },
+  ],
+  Resources: [
+    { label: 'Documentation', href: '#' },
+    { label: 'API Reference', href: '#' },
+    { label: 'Status Page', href: '#' },
+    { label: 'Report', href: '#' },
+  ],
+  Legal: [
+    { label: 'Privacy Policy', href: '#' },
+    { label: 'Terms of Service', href: '#' },
+    { label: 'Security', href: '#' },
+  ],
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
@@ -109,6 +173,11 @@ export default async function LandingPage() {
   return (
     <div className="min-h-screen flex flex-col" style={{ background: 'var(--background)' }}>
 
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <header
         className="sticky top-0 z-50 flex items-center justify-between px-14 py-4"
@@ -118,9 +187,9 @@ export default async function LandingPage() {
 
         <nav className="hidden md:flex items-center gap-8">
           {NAV_LINKS.map((l) => (
-            <a key={l} href={l === 'Pricing' ? '#pricing' : l === 'Features' ? '#features' : '#'} className="text-sm transition-colors hover:text-foreground"
+            <a key={l.label} href={l.href} className="text-sm transition-colors hover:text-foreground"
                style={{ color: 'var(--muted-foreground)' }}>
-              {l}
+              {l.label}
             </a>
           ))}
         </nav>
@@ -160,8 +229,8 @@ export default async function LandingPage() {
             className="text-6xl font-bold leading-tight mb-6 max-w-3xl"
             style={{ color: 'var(--foreground)' }}
           >
-            Your APIs Are Breaking.{' '}
-            <span style={{ color: 'var(--primary)' }}>Know Before Your Users Do.</span>
+            API Monitoring That{' '}
+            <span style={{ color: 'var(--primary)' }}>Alerts You Before Users Notice.</span>
           </h1>
 
           {/* Subtitle — CRO #4: pain-point driven */}
@@ -170,7 +239,7 @@ export default async function LandingPage() {
             style={{ color: 'var(--muted-foreground)' }}
           >
             GitHub rate limits hitting zero? Stripe balance dropping? OpenAI credits running out?
-            Get instant alerts across all your SaaS dependencies — from one dashboard.
+            Monitor all your SaaS API dependencies from one dashboard — with instant alerts in under 30 seconds.
           </p>
 
           {/* CTAs — CRO #3: fix dead demo link */}
@@ -357,6 +426,7 @@ export default async function LandingPage() {
 
         {/* ── How It Works — CRO #2: new section ──────────────────────────── */}
         <section
+          id="how-it-works"
           className="flex flex-col items-center px-14 py-20"
           style={{ background: 'var(--background)' }}
         >
@@ -596,8 +666,8 @@ export default async function LandingPage() {
           <div className="flex flex-col gap-4 max-w-xs flex-shrink-0">
             <Logo />
             <p className="text-sm leading-relaxed" style={{ color: 'var(--muted-foreground)' }}>
-              Unified monitoring for all your SaaS dependencies.
-              Know before the first failure.
+              API monitoring dashboard for all your SaaS dependencies.
+              Track rate limits, credit balances, and more — know before the first failure.
             </p>
           </div>
 
@@ -613,12 +683,12 @@ export default async function LandingPage() {
                 </p>
                 {links.map((link) => (
                   <a
-                    key={link}
-                    href="#"
+                    key={link.label}
+                    href={link.href}
                     className="text-sm transition-colors hover:text-foreground"
                     style={{ color: 'var(--muted-foreground)' }}
                   >
-                    {link}
+                    {link.label}
                   </a>
                 ))}
               </div>
