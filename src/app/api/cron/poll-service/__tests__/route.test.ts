@@ -4,7 +4,7 @@ vi.mock('@upstash/qstash/nextjs', () => ({
   verifySignatureAppRouter: (fn: Function) => fn,
 }))
 
-vi.mock('@/lib/supabase/server', () => ({
+vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn(),
 }))
 
@@ -30,7 +30,7 @@ vi.mock('@/lib/notifications/email', () => ({
   sendAlertEmail: vi.fn().mockResolvedValue(undefined),
 }))
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@supabase/supabase-js'
 import { getProvider } from '@/lib/providers'
 import { POST } from '../route'
 
@@ -74,7 +74,7 @@ describe('POST /api/cron/poll-service', () => {
         single: vi.fn().mockResolvedValue({ data: null, error: null }),
       }),
     }
-    vi.mocked(createClient).mockResolvedValue(mock as never)
+    vi.mocked(createClient).mockReturnValue(mock as never)
     const res = await POST(makeRequest({ serviceId: 'svc-1' }) as never)
     expect(res.status).toBe(404)
   })
@@ -93,7 +93,7 @@ describe('POST /api/cron/poll-service', () => {
       from: vi.fn().mockReturnValue(fromMock),
       auth: { admin: { getUserById: vi.fn().mockResolvedValue({ data: { user: { email: 'u@example.com' } } }) } },
     }
-    vi.mocked(createClient).mockResolvedValue(mock as never)
+    vi.mocked(createClient).mockReturnValue(mock as never)
     const res = await POST(makeRequest({ serviceId: 'svc-1' }) as never)
     expect(res.status).toBe(200)
   })

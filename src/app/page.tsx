@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
 import { Activity, Grid3x3, Bell, ShieldCheck, Zap, Play, Link2, BarChart3, Mail, Quote } from 'lucide-react'
 import { PricingSection } from '@/components/pricing-section'
+import { FaqSection, faqJsonLd } from '@/components/faq-section'
 
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -42,6 +43,7 @@ const jsonLd = {
       url: 'https://stackpulse.dev',
       logo: 'https://stackpulse.dev/icon.png',
     },
+    faqJsonLd,
   ],
 }
 
@@ -49,7 +51,7 @@ const jsonLd = {
 
 const NAV_LINKS = [
   { label: 'Features', href: '#features' },
-  { label: 'Integrations', href: '#features' },
+  { label: 'Integrations', href: '/integrations' },
   { label: 'Pricing', href: '#pricing' },
   { label: 'Docs', href: '#' },
 ]
@@ -140,7 +142,7 @@ const TESTIMONIALS = [
 const FOOTER_COLS: Record<string, { label: string; href: string }[]> = {
   Product: [
     { label: 'Features', href: '#features' },
-    { label: 'Integrations', href: '#features' },
+    { label: 'Integrations', href: '/integrations' },
     { label: 'Pricing', href: '#pricing' },
     { label: 'Changelog', href: '#' },
   ],
@@ -618,6 +620,9 @@ export default async function LandingPage() {
 
           <PricingSection />
         </section>
+
+        {/* ── FAQ ────────────────────────────────────────────────────────── */}
+        <FaqSection />
 
         {/* ── CTA — CRO #8: replaced "Talk to Sales" ──────────────────────── */}
         <section

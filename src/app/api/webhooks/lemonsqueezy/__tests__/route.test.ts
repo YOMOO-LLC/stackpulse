@@ -6,8 +6,8 @@ const mockUpdate = vi.fn().mockReturnValue({
   eq: vi.fn().mockResolvedValue({ data: null, error: null }),
 })
 
-vi.mock('@/lib/supabase/server', () => ({
-  createClient: vi.fn().mockResolvedValue({
+vi.mock('@supabase/supabase-js', () => ({
+  createClient: vi.fn().mockReturnValue({
     from: vi.fn().mockReturnValue({
       upsert: mockUpsert,
       update: mockUpdate,
@@ -155,8 +155,8 @@ describe('POST /api/webhooks/lemonsqueezy', () => {
     vi.resetModules()
 
     // Re-mock dependencies after resetModules
-    vi.doMock('@/lib/supabase/server', () => ({
-      createClient: vi.fn().mockResolvedValue({
+    vi.doMock('@supabase/supabase-js', () => ({
+      createClient: vi.fn().mockReturnValue({
         from: vi.fn().mockReturnValue({
           upsert: mockUpsert,
           update: mockUpdate,

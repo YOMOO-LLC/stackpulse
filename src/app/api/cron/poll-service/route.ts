@@ -6,6 +6,7 @@ import { needsRefresh, refreshAccessToken } from '@/lib/oauth/refresh'
 import { getProvider } from '@/lib/providers'
 import { evaluateAlerts } from '@/lib/alerts/engine'
 import { sendAlertEmail } from '@/lib/notifications/email'
+import { sendSlackAlert } from '@/lib/notifications/slack'
 import { fetchProviderMetrics } from '@/lib/providers/fetch'
 
 export const dynamic = 'force-dynamic'
@@ -114,18 +115,38 @@ async function handler(req: NextRequest) {
             .update({ last_notified_at: new Date().toISOString() })
             .eq('id', rule.id)
 
+          const collectorMeta = provider.collectors.find((c: { id: string }) => c.id === rule.collector_id)
+          const collectorName = (collectorMeta as { name?: string } | undefined)?.name ?? rule.collector_id
+          const alertPayload = {
+            serviceName: provider.name ?? service.provider_id,
+            collectorName,
+            condition: rule.condition,
+            threshold: rule.threshold_numeric ?? rule.threshold_text ?? '',
+            triggeredValue: snapshot.value ?? '',
+            serviceId,
+          }
+
           if (userEmail) {
-            const collectorMeta = provider.collectors.find((c: { id: string }) => c.id === rule.collector_id)
-            const collectorName = (collectorMeta as { name?: string } | undefined)?.name ?? rule.collector_id
-            await sendAlertEmail({
-              to: userEmail,
-              serviceName: provider.name ?? service.provider_id,
-              collectorName,
-              condition: rule.condition,
-              threshold: rule.threshold_numeric ?? rule.threshold_text ?? '',
-              triggeredValue: snapshot.value ?? '',
-              serviceId,
-            })
+            await sendAlertEmail({ to: userEmail, ...alertPayload })
+          }
+
+          // Send Slack notification if configured
+          try {
+            const { data: slackChannel } = await supabase
+              .from('notification_channels')
+              .select('id, config, enabled')
+              .eq('user_id', service.user_id)
+              .eq('type', 'slack')
+              .single()
+
+            if (slackChannel?.enabled) {
+              const slackConfig = JSON.parse(decrypt(slackChannel.config, process.env.ENCRYPTION_KEY!))
+              if (slackConfig.webhook_url) {
+                await sendSlackAlert(slackConfig.webhook_url, alertPayload)
+              }
+            }
+          } catch {
+            // No Slack channel configured or decryption error — skip silently
           }
         }
       }

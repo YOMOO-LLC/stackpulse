@@ -6,6 +6,10 @@ vi.mock('@/lib/supabase/server', () => ({
 vi.mock('@/lib/subscription', () => ({
   getUserPlan: vi.fn(),
 }))
+vi.mock('@/lib/crypto', () => ({
+  encrypt: vi.fn((text: string) => `encrypted:${text}`),
+  decrypt: vi.fn((text: string) => text.replace('encrypted:', '')),
+}))
 
 import { createClient } from '@/lib/supabase/server'
 import { getUserPlan } from '@/lib/subscription'
@@ -21,9 +25,18 @@ function makePostReq(body: object) {
   })
 }
 
+process.env.ENCRYPTION_KEY = 'a'.repeat(64)
+
 function mockSupabaseAuth() {
   const client = {
     auth: { getUser: vi.fn().mockResolvedValue({ data: { user: MOCK_USER }, error: null }) },
+    from: vi.fn().mockReturnValue({
+      upsert: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({ data: { id: 'ch-1' }, error: null }),
+        }),
+      }),
+    }),
   }
   vi.mocked(createClient).mockResolvedValue(client as never)
 }
@@ -110,7 +123,10 @@ describe('POST /api/channels — channel type limit', () => {
     })
     mockSupabaseAuth()
 
-    const res = await POST(makePostReq({ type: 'slack' }) as never)
+    const res = await POST(makePostReq({
+      type: 'slack',
+      config: { webhook_url: 'https://hooks.slack.com/services/T00/B00/xxx' },
+    }) as never)
 
     expect(res.status).toBe(200)
     const json = await res.json()
